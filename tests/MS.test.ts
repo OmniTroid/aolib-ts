@@ -178,7 +178,7 @@ describe("MS: minimal-input encoding fills every default", () => {
 // ---------------------------------------------------------------------
 
 describe("MS: offset codec", () => {
-  it("offset packs as `x<and>y` on the fanta wire", () => {
+  it("offset packs as `x&y` on the fanta wire (modern, no `<and>` escape)", () => {
     const wire = encode(
       MSRequest,
       {
@@ -194,10 +194,30 @@ describe("MS: offset codec", () => {
     // Slot 18 holds offset (HEAD has 17 fields, offset is field 18,
     // which is at index 18 in the `#`-split array after the header).
     const parts = wire.split("#");
-    expect(parts[18]).toBe("50<and>-20");
+    expect(parts[18]).toBe("50&-20");
   });
 
-  it("offset decodes from the escaped wire form", () => {
+  it("decode tolerates the legacy `<and>` escape form", () => {
+    // Older peers (or our own pre-modernisation output) escape the `&`
+    // separator to `<and>`. The decoder strips it before splitting.
+    const parts = encode(
+      MSRequest,
+      {
+        character: "Phoenix",
+        emote: "normal",
+        message: "hi",
+        side: Side.WITNESS,
+        char_id: 0,
+        offset: { x: 50, y: -20 },
+      },
+      "fanta",
+    ).split("#");
+    parts[18] = "50<and>-20"; // legacy form
+    const decoded = decode(MSRequest, parts.join("#")) as unknown as MSRequestType;
+    expect(decoded.offset).toEqual({ x: 50, y: -20 });
+  });
+
+  it("offset decodes from the modern wire form", () => {
     const wire = encode(
       MSRequest,
       {

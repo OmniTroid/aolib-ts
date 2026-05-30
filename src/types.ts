@@ -26,8 +26,12 @@ export interface JsonSchema {
   $ref?: string;
 
   // Extension keywords.
-  /** On nested objects: legacy-escape the `&` sub-separator on the wire. */
-  "x-fanta-escape"?: boolean;
+  /**
+   * On nested objects: decode-only. Tolerate the legacy `<and>` escape
+   * form (replace `<and>` → `&` before splitting on `&`). Encoders
+   * never emit `<and>`.
+   */
+  "x-fanta-unescape-amp"?: boolean;
   /** On a packet root: replace the whole walker with a registered codec. */
   "x-fanta-codec"?: string;
   /** Direction metadata, used by the registry; not read at runtime. */

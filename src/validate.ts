@@ -16,7 +16,7 @@
 
 import Ajv, { type ValidateFunction } from "ajv";
 import type { JsonSchema } from "./types";
-import { enumSchemas } from "../generated/packets";
+import { enumSchemas, typeSchemas } from "../generated/packets";
 import { registerRefSchema } from "./fanta";
 
 const ajv = new Ajv({
@@ -28,9 +28,9 @@ const ajv = new Ajv({
   strict: false,
 });
 
-// Register enum schemas so packet schemas' `$ref` resolves at both the
-// validator (Ajv) and the wire walker (fanta).
-for (const s of enumSchemas as JsonSchema[]) {
+// Register shared enum + type schemas so packet schemas' `$ref`
+// resolves at both the validator (Ajv) and the wire walker (fanta).
+for (const s of [...enumSchemas, ...typeSchemas] as JsonSchema[]) {
   ajv.addSchema(s);
   if (typeof s.$id === "string") registerRefSchema(s.$id, s);
 }

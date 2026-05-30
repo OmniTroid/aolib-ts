@@ -1,10 +1,11 @@
 /**
- * Hand-written supporting types and helpers for the packets whose
- * value space includes things JSON Schema enums don't express well.
+ * Re-exports of codegenned enums + shared types, plus a couple of
+ * non-schema helpers.
  *
- * The actual named enums (Side, DeskModifier, etc.) are codegenned
- * from aolib-meta/schemas/enums/*.enum.json into `../generated/enums`. Re-exported
- * here so callers have a single import.
+ * The named enums (Side, DeskModifier, etc.) come from
+ * aolib-meta/schemas/enums/* via `../generated/enums`. Shared object
+ * types (Offset, etc.) come from aolib-meta/schemas/types/* via
+ * `../generated/types`.
  */
 
 import { Side } from "../generated/enums";
@@ -19,11 +20,7 @@ export {
   TextColor,
 } from "../generated/enums";
 
-/** `{x, y}` integer offset pair, carried in MS offset / paired_offset slots. */
-export interface Offset {
-  x: number;
-  y: number;
-}
+export type { Offset } from "../generated/types";
 
 /** ARUP payload: numbers for PLAYER_COUNT, strings for everything else. */
 export type AreaUpdateData = number[] | string[];

@@ -9,8 +9,9 @@
  *   "number"/"integer" String(n) on encode, Number(token) on decode
  *   "boolean"         "1"/"0" on encode, token === "1" on decode
  *   "object"          recurse, join sub-tokens with `&`; optional
- *                     `x-fanta-escape: true` to legacy-escape the `&`
- *                     separator (offset slot in MS)
+ *                     `x-fanta-unescape-amp: true` to tolerate the
+ *                     legacy `<and>` form on decode (offset slot in
+ *                     MS). Encoders never emit `<and>`.
  *   "array"           greedy — consumes all remaining slots
  *   const             emitted as the const value; on decode the slot
  *                     is consumed but the schema-fixed value is used
@@ -115,8 +116,7 @@ function encodeToken(rawSchema: JsonSchema, value: unknown): string {
     for (const [k, sub] of Object.entries(props)) {
       parts.push(encodeToken(sub, obj[k]));
     }
-    const joined = parts.join("&");
-    return schema["x-fanta-escape"] ? joined.replaceAll("&", "<and>") : joined;
+    return parts.join("&");
   }
   return encodeScalar(t, value);
 }
@@ -140,7 +140,7 @@ function decodeToken(rawSchema: JsonSchema, token: string, name: string): unknow
 
   const t = jsonType(schema);
   if (t === "object") {
-    const raw = schema["x-fanta-escape"] ? token.replaceAll("<and>", "&") : token;
+    const raw = schema["x-fanta-unescape-amp"] ? token.replaceAll("<and>", "&") : token;
     const parts = raw.split("&");
     const result: Record<string, unknown> = {};
     let i = 0;

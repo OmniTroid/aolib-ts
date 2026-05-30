@@ -37,9 +37,11 @@ const ROOT = join(SCRIPTS_DIR, "..");
 const SCHEMAS_ROOT = join(ROOT, "aolib-meta/schemas");
 const PACKETS_DIR = join(SCHEMAS_ROOT, "packets");
 const ENUMS_DIR = join(SCHEMAS_ROOT, "enums");
+const TYPES_DIR = join(SCHEMAS_ROOT, "types");
 const REGISTRY_FILE = join(SCRIPTS_DIR, "registry.json");
 const OUT_PACKETS = join(ROOT, "generated/packets.ts");
 const OUT_ENUMS = join(ROOT, "generated/enums.ts");
+const OUT_TYPES = join(ROOT, "generated/types.ts");
 
 // ---------------------------------------------------------------------
 // Read input
@@ -83,6 +85,13 @@ interface EnumDef {
   description?: string;
 }
 
+interface TypeDef {
+  name: string;            // TS interface name, also file basename
+  filename: string;        // e.g. "Offset.type.json"
+  schema: JsonSchema;      // the raw schema, used to render the body
+  description?: string;
+}
+
 function loadJson(path: string): JsonSchema {
   return JSON.parse(readFileSync(path, "utf8")) as JsonSchema;
 }
@@ -99,6 +108,29 @@ function listPacketNames(): string[] {
 
 function listEnumFiles(): string[] {
   return readdirSync(ENUMS_DIR).filter((f) => f.endsWith(".enum.json"));
+}
+
+function listTypeFiles(): string[] {
+  try {
+    return readdirSync(TYPES_DIR).filter((f) => f.endsWith(".type.json"));
+  } catch {
+    return [];
+  }
+}
+
+function loadTypes(): Map<string, TypeDef> {
+  const out = new Map<string, TypeDef>();
+  for (const filename of listTypeFiles()) {
+    const schema = loadJson(join(TYPES_DIR, filename));
+    const name = filename.replace(/\.type\.json$/, "");
+    out.set(filename, {
+      name,
+      filename,
+      schema,
+      description: typeof schema.description === "string" ? schema.description : undefined,
+    });
+  }
+  return out;
 }
 
 function loadEnums(): Map<string, EnumDef> {
@@ -136,7 +168,9 @@ function normalizeRegistry(entries: (string | RegistryEntry)[]): RegistryEntry[]
 
 interface RenderCtx {
   enums: Map<string, EnumDef>;
+  types: Map<string, TypeDef>;
   enumImports: Set<string>; // populated with enum names referenced
+  typeImports: Set<string>; // populated with type names referenced
 }
 
 function renderType(s: JsonSchema, indent: number, ctx: RenderCtx): string {
@@ -145,6 +179,11 @@ function renderType(s: JsonSchema, indent: number, ctx: RenderCtx): string {
     if (enumDef) {
       ctx.enumImports.add(enumDef.name);
       return enumDef.name;
+    }
+    const typeDef = ctx.types.get(s.$ref);
+    if (typeDef) {
+      ctx.typeImports.add(typeDef.name);
+      return typeDef.name;
     }
     return "unknown";
   }
@@ -267,6 +306,26 @@ function emitClass(name: string, schema: JsonSchema, ctx: RenderCtx): string {
 // Enum file emission
 // ---------------------------------------------------------------------
 
+function emitTypesFile(types: Map<string, TypeDef>): string {
+  const parts: string[] = [
+    "// AUTO-GENERATED from aolib-meta/schemas/types/*. Do not edit; run `bun run codegen`.\n",
+  ];
+  const sorted = [...types.values()].sort((a, b) => a.name.localeCompare(b.name));
+  for (const t of sorted) {
+    if (t.description) parts.push(`/** ${t.description} */`);
+    // Render as `interface Name { ... }`. Use a minimal ctx; nested
+    // refs to other types/enums round-trip through the same lookup.
+    const body = renderObjectType(t.schema, 0, {
+      enums: new Map(),
+      types,
+      enumImports: new Set(),
+      typeImports: new Set(),
+    });
+    parts.push(`export interface ${t.name} ${body}\n`);
+  }
+  return parts.join("\n");
+}
+
 function emitEnumsFile(enums: Map<string, EnumDef>): string {
   const parts: string[] = [
     "// AUTO-GENERATED from aolib-meta/schemas/enums/*. Do not edit; run `bun run codegen`.\n",
@@ -377,15 +436,22 @@ ${s2cOut.join("\n")}
 
 function main(): void {
   const enums = loadEnums();
+  const types = loadTypes();
   const packets = [...listPacketNames()].sort();
   const reg = loadRegistry();
 
-  // Enums file is straightforward — no per-packet context.
+  // Enums + types files are straightforward — no per-packet context.
   writeFileSync(OUT_ENUMS, emitEnumsFile(enums));
+  writeFileSync(OUT_TYPES, emitTypesFile(types));
 
-  // Packets file — render with a shared context so enum imports
-  // accumulate as we walk each packet.
-  const ctx: RenderCtx = { enums, enumImports: new Set() };
+  // Packets file — render with a shared context so enum + type
+  // imports accumulate as we walk each packet.
+  const ctx: RenderCtx = {
+    enums,
+    types,
+    enumImports: new Set(),
+    typeImports: new Set(),
+  };
   const classBlocks: string[] = [];
   for (const name of packets) {
     const schema = loadJson(join(PACKETS_DIR, `${name}.schema.json`));
@@ -394,21 +460,26 @@ function main(): void {
 
   const enumImports = ctx.enumImports.size === 0
     ? ""
-    : `import { ${[...ctx.enumImports].sort().join(", ")} } from "./enums";\n\n`;
+    : `import { ${[...ctx.enumImports].sort().join(", ")} } from "./enums";\n`;
+  const typeImports = ctx.typeImports.size === 0
+    ? ""
+    : `import { ${[...ctx.typeImports].sort().join(", ")} } from "./types";\n`;
 
   const parts: string[] = [
     "// AUTO-GENERATED from aolib-meta/schemas/. Do not edit; run `bun run codegen`.\n",
     "/* eslint-disable */\n",
-    enumImports,
+    enumImports + typeImports,
   ];
 
-  // Enum schemas — imported as runtime values so validate.ts can
-  // register them with Ajv for $ref resolution.
-  const enumNames = [...enums.values()]
-    .map((e) => e.name)
-    .sort();
+  // Enum + type schemas — imported as runtime values so validate.ts
+  // can register them with Ajv for $ref resolution.
+  const enumNames = [...enums.values()].map((e) => e.name).sort();
+  const typeNames = [...types.values()].map((t) => t.name).sort();
   for (const name of enumNames) {
     parts.push(`import ${name}EnumSchema from "../aolib-meta/schemas/enums/${name}.enum.json";\n`);
+  }
+  for (const name of typeNames) {
+    parts.push(`import ${name}TypeSchema from "../aolib-meta/schemas/types/${name}.type.json";\n`);
   }
   parts.push("");
 
@@ -424,6 +495,9 @@ function main(): void {
 
   parts.push(
     `export const enumSchemas = [${enumNames.map((n) => `${n}EnumSchema`).join(", ")}];\n`,
+  );
+  parts.push(
+    `export const typeSchemas = [${typeNames.map((n) => `${n}TypeSchema`).join(", ")}];\n`,
   );
   parts.push("");
 

@@ -3,7 +3,7 @@
 /* eslint-disable */
 
 import { AreaUpdateType, DeskModifier, EmoteModifier, Flip, ShoutModifier, Side, TextColor } from "./enums";
-
+import { Offset } from "./types";
 
 import AreaUpdateTypeEnumSchema from "../aolib-meta/schemas/enums/AreaUpdateType.enum.json";
 
@@ -18,6 +18,8 @@ import ShoutModifierEnumSchema from "../aolib-meta/schemas/enums/ShoutModifier.e
 import SideEnumSchema from "../aolib-meta/schemas/enums/Side.enum.json";
 
 import TextColorEnumSchema from "../aolib-meta/schemas/enums/TextColor.enum.json";
+
+import OffsetTypeSchema from "../aolib-meta/schemas/types/Offset.type.json";
 
 
 import AESchema from "../aolib-meta/schemas/packets/AE.schema.json";
@@ -283,6 +285,8 @@ export { default as decryptorSchema } from "../aolib-meta/schemas/packets/decryp
 
 
 export const enumSchemas = [AreaUpdateTypeEnumSchema, DeskModifierEnumSchema, EmoteModifierEnumSchema, FlipEnumSchema, ShoutModifierEnumSchema, SideEnumSchema, TextColorEnumSchema];
+
+export const typeSchemas = [OffsetTypeSchema];
 
 
 export class AE {
@@ -797,14 +801,8 @@ export class MSBroadcast {
   paired_charid!: number;
   paired_name!: string;
   paired_emote!: string;
-  offset!: {
-    x: number;
-    y: number;
-  };
-  paired_offset!: {
-    x: number;
-    y: number;
-  };
+  offset!: Offset;
+  paired_offset!: Offset;
   paired_flip!: Flip;
   noninterrupting_preanim!: boolean;
   sfx_looping!: boolean;
@@ -835,14 +833,8 @@ export class MSBroadcast {
     paired_charid?: number;
     paired_name?: string;
     paired_emote?: string;
-    offset?: {
-    x: number;
-    y: number;
-  };
-    paired_offset?: {
-    x: number;
-    y: number;
-  };
+    offset?: Offset;
+    paired_offset?: Offset;
     paired_flip?: Flip;
     noninterrupting_preanim?: boolean;
     sfx_looping?: boolean;
@@ -905,10 +897,7 @@ export class MSRequest {
   text_color!: TextColor;
   showname!: string;
   paired_charid!: number;
-  offset!: {
-    x: number;
-    y: number;
-  };
+  offset!: Offset;
   noninterrupting_preanim!: boolean;
   sfx_looping!: boolean;
   screenshake!: boolean;
@@ -936,10 +925,7 @@ export class MSRequest {
     text_color?: TextColor;
     showname?: string;
     paired_charid?: number;
-    offset?: {
-    x: number;
-    y: number;
-  };
+    offset?: Offset;
     noninterrupting_preanim?: boolean;
     sfx_looping?: boolean;
     screenshake?: boolean;
