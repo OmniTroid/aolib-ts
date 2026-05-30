@@ -112,10 +112,9 @@ export {
 
 export { encode, type WireMode } from "./encode";
 export { decode, readHeader } from "./decode";
-export { cast } from "./cast";
+export { validate } from "./validate";
 
 // Per-field walkers (lower-level — most callers won't need these).
-export { fromJson, toJson } from "./json";
 export { fromFantaArgs, toFantaArgs } from "./fanta";
 
 // ---------------------------------------------------------------------

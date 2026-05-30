@@ -1,28 +1,21 @@
 /**
  * Encode: typed packet → wire string.
  *
- * Single public entry point with a `mode` selector. Both wire formats
- * share the same gauntlet (`cast`) and dispatch into their walkers
- * (`toJson` / `toFantaArgs`). The fanta path additionally consults the
- * schema's optional `toArgs` override before falling back to the
- * default args walker.
+ * Validation is delegated to Ajv via `validate(schema, ...)`: defaults
+ * fill in, extras strip out, required-field misses throw. The library
+ * itself only owns the two wire-format steps that Ajv can't express:
  *
- * Pipeline:
+ *   - JSON path: stringify the validated envelope.
+ *   - Fanta path: walk the schema's field order, ask each field's
+ *     `toFanta` codec for its positional token, frame with `HEADER#…#%`.
  *
- *   packet
- *     │
- *     ▼  cast(fields, packet)
- *   filled packet (defaults applied, required validated, literals stripped)
- *     │
- *     ├── JSON mode ──► { $header, ...toJson(field, value) per non-literal } → JSON.stringify
- *     │
- *     └── fanta mode ──► schema.toArgs(filled) OR toFantaArgs(fields, filled)
- *                        → frame as `HEADER#…#%`
+ * Literals never appear in the typed packet (the JSON Schema omits
+ * them) but the fanta walker re-injects them from the field definition,
+ * since they are part of the wire shape.
  */
 
-import { cast } from "./cast";
-import { toJson } from "./json";
 import { toFantaArgs } from "./fanta";
+import { validate } from "./validate";
 import type { Fields, Schema } from "./schema";
 
 export type WireMode = "fanta" | "json";
@@ -32,37 +25,26 @@ export function encode<F extends Fields>(
   packet: Record<string, unknown>,
   mode: WireMode,
 ): string {
-  // Defaults filled, required validated, literals stripped. Both
-  // wire-format paths consume the result.
-  const filled = cast(schema.fields, packet);
+  // Ajv expects `$header` to be present (the JSON Schema declares it
+  // `const`). `$header` first preserves the canonical envelope key order.
+  const envelope: Record<string, unknown> = { $header: schema.$header, ...packet };
+  validate(schema, envelope);
 
   if (mode === "json") {
-    return encodeJson(schema, filled);
+    return JSON.stringify(envelope);
   }
-  return encodeFanta(schema, filled);
-}
-
-function encodeJson<F extends Fields>(
-  schema: Schema<F>,
-  filled: Record<string, unknown>,
-): string {
-  const envelope: Record<string, unknown> = { $header: schema.$header };
-  for (const [name, field] of Object.entries(schema.fields)) {
-    if (field.kind === "literal") continue;
-    envelope[name] = toJson(field, filled[name] as never);
-  }
-  return JSON.stringify(envelope);
+  return encodeFanta(schema, envelope);
 }
 
 function encodeFanta<F extends Fields>(
   schema: Schema<F>,
-  filled: Record<string, unknown>,
+  envelope: Record<string, unknown>,
 ): string {
   // Schema-level override takes precedence — used for packets whose
   // wire layout the default args walker can't express.
   const args = schema.toArgs
-    ? schema.toArgs(filled)
-    : toFantaArgs(schema.fields, filled);
+    ? schema.toArgs(envelope)
+    : toFantaArgs(schema.fields, envelope);
   return frameFantaWire(schema.$header, args);
 }
 

@@ -98,9 +98,9 @@ describe("encode: JSON mode", () => {
     expect(encode(DONE, {}, "json")).toBe('{"$header":"DONE"}');
   });
 
-  it("missing required field throws via cast", () => {
+  it("missing required field throws", () => {
     expect(() => encode(MC, { name: "x" }, "json")).toThrow(
-      /Missing required field 'char_id'/,
+      /must have required property 'char_id'/,
     );
   });
 });

@@ -117,12 +117,12 @@ describe("decode: JSON mode", () => {
   it("type mismatch throws with field path", () => {
     expect(() =>
       decode(MC, '{"$header":"MC","name":"x","char_id":"not-a-number"}'),
-    ).toThrow(/Field 'char_id': expected number/);
+    ).toThrow(/char_id must be number/);
   });
 
   it("missing required field throws", () => {
     expect(() => decode(MC, '{"$header":"MC","name":"x"}')).toThrow(
-      /Missing required field 'char_id'/,
+      /must have required property 'char_id'/,
     );
   });
 
@@ -223,7 +223,7 @@ describe("decode: fanta mode", () => {
   });
 
   it("missing required field on the wire throws", () => {
-    expect(() => decode(MC, "MC#%")).toThrow(/Missing required field 'name'/);
+    expect(() => decode(MC, "MC#%")).toThrow(/must have required property 'name'/);
   });
 
   it("header mismatch throws", () => {

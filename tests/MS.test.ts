@@ -369,7 +369,7 @@ describe("MS: request vs broadcast shape divergence", () => {
     // requires character, message, side, char_id at minimum.
     expect(() =>
       decode(MSBroadcast, "MS#1#preanim#Phoenix##Hello#wit#%"),
-    ).toThrow(/Missing required field 'char_id'/);
+    ).toThrow(/must have required property 'char_id'/);
   });
 });
 
