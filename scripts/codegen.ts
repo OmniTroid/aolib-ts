@@ -1,30 +1,28 @@
 /**
- * Codegen: reads schemas/ and emits generated/packets.ts.
+ * Codegen: reads schemas/ and emits generated/packets.ts + generated/enums.ts.
  *
- * For each schemas/<Name>.schema.json this produces a TypeScript
- * class:
+ * Inputs:
+ *   - schemas/<Name>.schema.json — one per packet
+ *   - schemas/<Name>.enum.json   — one per named enum, referenced from packet
+ *     schemas via `{ "$ref": "<Name>.enum.json" }`. Each carries an
+ *     `x-enum-names` array parallel to the `enum` values so codegen
+ *     can produce a TS `enum`.
+ *   - scripts/registry.json — direction routing per header
  *
+ * Outputs:
+ *   - generated/enums.ts — one `export enum` per .enum.json file
+ *   - generated/packets.ts — one class per packet, plus direction maps
+ *
+ * For each .schema.json this produces a TypeScript class:
  *   - declared properties (`!: T`) carry the *decoded* shape — every
- *     visible field present, $header included as a `const`-typed slot
+ *     visible field present
  *   - the constructor's parameter type carries the *input* shape —
  *     default-bearing fields optional, const-only slots omitted
- *   - the constructor body assigns `$header`, copies provided fields,
- *     and fills defaults with `??`
+ *   - the constructor body assigns visible fields with `??` defaults
  *
- * The class is the single source of typing for both encode (caller
- * passes input shape) and decode (handler receives instance). The
- * library prototype-rehydrates parsed wire data into instances so
- * `instanceof` works.
- *
- * Each class is paired with its JSON Schema (imported from
- * `../schemas/<Name>.schema.json`) for runtime validation by Ajv.
- *
- * scripts/registry.json maps headers to schemas per direction. From it
- * we build:
- *   - c2sSchemas / s2cSchemas — header → JSON Schema (Ajv input)
- *   - c2sClasses / s2cClasses — header → class constructor (for rehydration)
- *   - C2SInputs / S2CInputs   — header → ConstructorParameters[0] (typing)
- *   - C2SOutputs / S2COutputs — header → instance type (typing)
+ * Properties whose schema is a `$ref` to an enum file render as the
+ * named TS enum type, imported from `./enums`. Ajv resolves the same
+ * `$ref` at validate-time via schemas added through `validate.ts`.
  *
  * Run via `bun run codegen`. Output is committed.
  */
@@ -37,7 +35,8 @@ const SCRIPTS_DIR = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(SCRIPTS_DIR, "..");
 const SCHEMAS_DIR = join(ROOT, "schemas");
 const REGISTRY_FILE = join(SCRIPTS_DIR, "registry.json");
-const OUT = join(ROOT, "generated/packets.ts");
+const OUT_PACKETS = join(ROOT, "generated/packets.ts");
+const OUT_ENUMS = join(ROOT, "generated/enums.ts");
 
 // ---------------------------------------------------------------------
 // Read input
@@ -54,8 +53,10 @@ interface JsonSchema {
   title?: string;
   additionalProperties?: boolean;
   $schema?: string;
+  $ref?: string;
   "x-fanta-escape"?: boolean;
   "x-fanta-codec"?: string;
+  "x-enum-names"?: string[];
   [k: string]: unknown;
 }
 
@@ -70,20 +71,54 @@ interface Registry {
   both: string[];
 }
 
-function loadSchema(name: string): JsonSchema {
-  const text = readFileSync(join(SCHEMAS_DIR, `${name}.schema.json`), "utf8");
-  return JSON.parse(text) as JsonSchema;
+interface EnumDef {
+  name: string;            // TS enum name, also file basename
+  filename: string;        // e.g. "Side.enum.json"
+  values: unknown[];       // schema enum values
+  names: string[];         // parallel x-enum-names
+  isString: boolean;       // string vs integer underlying type
+  description?: string;
+}
+
+function loadJson(path: string): JsonSchema {
+  return JSON.parse(readFileSync(path, "utf8")) as JsonSchema;
 }
 
 function loadRegistry(): Registry {
-  const text = readFileSync(REGISTRY_FILE, "utf8");
-  return JSON.parse(text) as Registry;
+  return JSON.parse(readFileSync(REGISTRY_FILE, "utf8")) as Registry;
 }
 
-function listSchemaNames(): string[] {
+function listPacketNames(): string[] {
   return readdirSync(SCHEMAS_DIR)
     .filter((f) => f.endsWith(".schema.json"))
     .map((f) => f.replace(/\.schema\.json$/, ""));
+}
+
+function listEnumFiles(): string[] {
+  return readdirSync(SCHEMAS_DIR).filter((f) => f.endsWith(".enum.json"));
+}
+
+function loadEnums(): Map<string, EnumDef> {
+  const out = new Map<string, EnumDef>();
+  for (const filename of listEnumFiles()) {
+    const schema = loadJson(join(SCHEMAS_DIR, filename));
+    const name = filename.replace(/\.enum\.json$/, "");
+    if (!schema.enum || !schema["x-enum-names"]) {
+      throw new Error(`Enum schema ${filename} missing 'enum' or 'x-enum-names'`);
+    }
+    if (schema.enum.length !== schema["x-enum-names"].length) {
+      throw new Error(`Enum schema ${filename}: 'enum' and 'x-enum-names' lengths differ`);
+    }
+    out.set(filename, {
+      name,
+      filename,
+      values: schema.enum,
+      names: schema["x-enum-names"],
+      isString: schema.type === "string",
+      description: typeof schema.description === "string" ? schema.description : undefined,
+    });
+  }
+  return out;
 }
 
 function normalizeRegistry(entries: (string | RegistryEntry)[]): RegistryEntry[] {
@@ -96,17 +131,28 @@ function normalizeRegistry(entries: (string | RegistryEntry)[]): RegistryEntry[]
 // JSON Schema → TS type rendering
 // ---------------------------------------------------------------------
 
-function renderType(s: JsonSchema, indent: number): string {
+interface RenderCtx {
+  enums: Map<string, EnumDef>;
+  enumImports: Set<string>; // populated with enum names referenced
+}
+
+function renderType(s: JsonSchema, indent: number, ctx: RenderCtx): string {
+  if (s.$ref) {
+    const enumDef = ctx.enums.get(s.$ref);
+    if (enumDef) {
+      ctx.enumImports.add(enumDef.name);
+      return enumDef.name;
+    }
+    return "unknown";
+  }
   if (s.const !== undefined) return JSON.stringify(s.const);
   if (s.enum) return s.enum.map((v) => JSON.stringify(v)).join(" | ");
 
   const t = s.type;
-  if (Array.isArray(t)) {
-    return t.map((tt) => primitive(tt)).join(" | ");
-  }
-  if (t === "object") return renderObjectType(s, indent);
+  if (Array.isArray(t)) return t.map((tt) => primitive(tt)).join(" | ");
+  if (t === "object") return renderObjectType(s, indent, ctx);
   if (t === "array") {
-    const inner = s.items ? renderType(s.items, indent) : "unknown";
+    const inner = s.items ? renderType(s.items, indent, ctx) : "unknown";
     return inner.includes(" ") && !inner.startsWith("{")
       ? `(${inner})[]`
       : `${inner}[]`;
@@ -128,8 +174,7 @@ function primitive(t: string): string {
   }
 }
 
-/** Nested object body, all properties required (decoded form). */
-function renderObjectType(s: JsonSchema, indent: number): string {
+function renderObjectType(s: JsonSchema, indent: number, ctx: RenderCtx): string {
   if (!s.properties) return "Record<string, unknown>";
   const required = new Set(s.required ?? []);
   const pad = "  ".repeat(indent + 1);
@@ -137,7 +182,7 @@ function renderObjectType(s: JsonSchema, indent: number): string {
   const lines: string[] = [];
   for (const [key, sub] of Object.entries(s.properties)) {
     const optional = !required.has(key);
-    lines.push(`${pad}${quoteKey(key)}${optional ? "?" : ""}: ${renderType(sub, indent + 1)};`);
+    lines.push(`${pad}${quoteKey(key)}${optional ? "?" : ""}: ${renderType(sub, indent + 1, ctx)};`);
   }
   return `{\n${lines.join("\n")}\n${closing}}`;
 }
@@ -152,20 +197,20 @@ function quoteKey(k: string): string {
 
 interface PropInfo {
   key: string;
-  type: string;        // TS type as a string
+  type: string;
   hasDefault: boolean;
-  defaultLiteral?: string; // JSON.stringified default value
+  defaultLiteral?: string;
   hasConst: boolean;
-  constLiteral?: string;   // JSON.stringified const value
-  required: boolean;       // in schema's required[]
+  constLiteral?: string;
+  required: boolean;
 }
 
-function classifyProperties(schema: JsonSchema): PropInfo[] {
+function classifyProperties(schema: JsonSchema, ctx: RenderCtx): PropInfo[] {
   const props = schema.properties ?? {};
   const required = new Set(schema.required ?? []);
   return Object.entries(props).map(([key, sub]) => ({
     key,
-    type: renderType(sub, 1),
+    type: renderType(sub, 1, ctx),
     hasDefault: sub.default !== undefined,
     defaultLiteral: sub.default !== undefined ? JSON.stringify(sub.default) : undefined,
     hasConst: sub.const !== undefined,
@@ -174,21 +219,18 @@ function classifyProperties(schema: JsonSchema): PropInfo[] {
   }));
 }
 
-function emitClass(name: string, schema: JsonSchema): string {
-  const props = classifyProperties(schema);
+function emitClass(name: string, schema: JsonSchema, ctx: RenderCtx): string {
+  const props = classifyProperties(schema, ctx);
   // Const-typed properties (`$header`, PV's `_cid`) are protocol
   // metadata. They're real schema fields the wire carries, but they
   // never appear on the user-facing instance type or in the
-  // constructor input — the library fills them on encode and strips
-  // them on decode.
+  // constructor input.
   const visible = props.filter((p) => !p.hasConst);
 
   const declarations = visible
     .map((p) => `  ${quoteKey(p.key)}!: ${p.type};`)
     .join("\n");
 
-  // Constructor parameter shape: default-bearing or non-required
-  // fields optional, the rest required.
   const ctorParamLines = visible.map((p) => {
     const optional = !p.required || p.hasDefault;
     return `    ${quoteKey(p.key)}${optional ? "?" : ""}: ${p.type};`;
@@ -197,7 +239,6 @@ function emitClass(name: string, schema: JsonSchema): string {
     ? "_input: Record<string, never> = {}"
     : `input: {\n${ctorParamLines.join("\n")}\n  }`;
 
-  // Constructor body: assign every visible field.
   const ctorBodyLines = visible.map((p) => {
     const accessor = `this.${quoteKey(p.key)}`;
     if (p.hasDefault) {
@@ -217,6 +258,28 @@ function emitClass(name: string, schema: JsonSchema): string {
     `  }\n` +
     `}\n`
   );
+}
+
+// ---------------------------------------------------------------------
+// Enum file emission
+// ---------------------------------------------------------------------
+
+function emitEnumsFile(enums: Map<string, EnumDef>): string {
+  const parts: string[] = [
+    "// AUTO-GENERATED from schemas/*.enum.json. Do not edit; run `bun run codegen`.\n",
+  ];
+  // Sort by name for deterministic output.
+  const sorted = [...enums.values()].sort((a, b) => a.name.localeCompare(b.name));
+  for (const e of sorted) {
+    if (e.description) parts.push(`/** ${e.description} */`);
+    parts.push(`export enum ${e.name} {`);
+    for (let i = 0; i < e.names.length; i++) {
+      const lit = e.isString ? JSON.stringify(e.values[i]) : String(e.values[i]);
+      parts.push(`  ${e.names[i]} = ${lit},`);
+    }
+    parts.push("}\n");
+  }
+  return parts.join("\n");
 }
 
 // ---------------------------------------------------------------------
@@ -310,39 +373,69 @@ ${s2cOut.join("\n")}
 // ---------------------------------------------------------------------
 
 function main(): void {
-  const names = listSchemaNames();
+  const enums = loadEnums();
+  const packets = [...listPacketNames()].sort();
   const reg = loadRegistry();
-  const sorted = [...names].sort();
+
+  // Enums file is straightforward — no per-packet context.
+  writeFileSync(OUT_ENUMS, emitEnumsFile(enums));
+
+  // Packets file — render with a shared context so enum imports
+  // accumulate as we walk each packet.
+  const ctx: RenderCtx = { enums, enumImports: new Set() };
+  const classBlocks: string[] = [];
+  for (const name of packets) {
+    const schema = loadJson(join(SCHEMAS_DIR, `${name}.schema.json`));
+    classBlocks.push(emitClass(name, schema, ctx));
+  }
+
+  const enumImports = ctx.enumImports.size === 0
+    ? ""
+    : `import { ${[...ctx.enumImports].sort().join(", ")} } from "./enums";\n\n`;
 
   const parts: string[] = [
     "// AUTO-GENERATED from schemas/. Do not edit; run `bun run codegen`.\n",
     "/* eslint-disable */\n",
+    enumImports,
   ];
 
-  // Imports of the raw JSON Schemas — sourced live from schemas/, no
-  // duplication.
-  for (const name of sorted) {
+  // Enum schemas — imported as runtime values so validate.ts can
+  // register them with Ajv for $ref resolution.
+  const enumNames = [...enums.values()]
+    .map((e) => e.name)
+    .sort();
+  for (const name of enumNames) {
+    parts.push(`import ${name}EnumSchema from "../schemas/${name}.enum.json";\n`);
+  }
+  parts.push("");
+
+  for (const name of packets) {
     parts.push(`import ${name}Schema from "../schemas/${name}.schema.json";\n`);
   }
   parts.push("");
 
-  // Re-export schemas for callers who want them by name.
-  for (const name of sorted) {
+  for (const name of packets) {
     parts.push(`export { default as ${name}Schema } from "../schemas/${name}.schema.json";\n`);
   }
   parts.push("");
 
-  // Class declarations.
-  for (const name of sorted) {
-    const schema = loadSchema(name);
-    parts.push(emitClass(name, schema));
+  parts.push(
+    `export const enumSchemas = [${enumNames.map((n) => `${n}EnumSchema`).join(", ")}];\n`,
+  );
+  parts.push("");
+
+  for (const block of classBlocks) {
+    parts.push(block);
     parts.push("");
   }
 
   parts.push(emitDirectionMaps(reg));
 
-  writeFileSync(OUT, parts.join("\n"));
-  console.log(`Wrote ${OUT} (${names.length} schemas)`);
+  writeFileSync(OUT_PACKETS, parts.join("\n"));
+  console.log(
+    `Wrote ${OUT_ENUMS} (${enums.size} enums), ` +
+      `${OUT_PACKETS} (${packets.length} packets)`,
+  );
 }
 
 main();

@@ -1,90 +1,37 @@
 /**
- * Named-enum conveniences for MS and ARUP.
+ * Hand-written supporting types and helpers for the packets whose
+ * value space includes things JSON Schema enums don't express well.
  *
- * The JSON Schemas for these packets define the underlying values
- * (e.g. `"side": { "enum": ["def", "pro", ...] }`). These exports
- * give callers human-friendly names so they can write
- * `Side.WITNESS` instead of `"wit"`. Each enum's values match the
- * schema; if you change one, change the other.
+ * The actual named enums (Side, DeskModifier, etc.) are codegenned
+ * from schemas/*.enum.json into `../generated/enums`. Re-exported
+ * here so callers have a single import.
  */
 
-// ---------------------------------------------------------------------
-// MS
-// ---------------------------------------------------------------------
+import { Side } from "../generated/enums";
 
-export enum DeskModifier {
-  HIDDEN = 0,
-  SHOWN = 1,
-  HIDE_DURING_PREANIM = 2,
-  SHOW_DURING_PREANIM = 3,
-  HIDE_AND_CENTER_DURING_PREANIM = 4,
-  SHOW_DURING_PREANIM_THEN_CENTER = 5,
-}
+export {
+  AreaUpdateType,
+  DeskModifier,
+  EmoteModifier,
+  Flip,
+  ShoutModifier,
+  Side,
+  TextColor,
+} from "../generated/enums";
 
-export enum EmoteModifier {
-  NO_PREANIM = 0,
-  PREANIM = 1,
-  PREANIM_AND_OBJECTION = 2,
-  ZOOM = 5,
-  OBJECTION_ZOOM = 6,
-}
-
-export enum ShoutModifier {
-  NONE = 0,
-  HOLD_IT = 1,
-  OBJECTION = 2,
-  TAKE_THAT = 3,
-  CUSTOM = 4,
-}
-
-export enum Flip {
-  NONE = 0,
-  HORIZONTAL = 1,
-  VERTICAL = 2,
-  HORIZONTAL_AND_VERTICAL = 3,
-}
-
-export enum TextColor {
-  WHITE = 0,
-  GREEN = 1,
-  RED = 2,
-  ORANGE = 3,
-  BLUE = 4,
-  YELLOW = 5,
-  PINK = 6,
-  CYAN = 7,
-  GREY = 8,
-  RAINBOW = 9,
-}
-
-export enum Side {
-  DEFENSE = "def",
-  PROSECUTION = "pro",
-  DEFENSE_HELPER = "hld",
-  PROSECUTION_HELPER = "hlp",
-  WITNESS = "wit",
-  JUDGE = "jud",
-  JURY = "jur",
-  SEANCE = "sea",
-}
-
+/** `{x, y}` integer offset pair, carried in MS offset / paired_offset slots. */
 export interface Offset {
   x: number;
   y: number;
 }
 
+/** ARUP payload: numbers for PLAYER_COUNT, strings for everything else. */
+export type AreaUpdateData = number[] | string[];
+
+/**
+ * Convenience predicate — true for sides whose layout uses the
+ * full-view pan-camera. The viewport layer consults this when
+ * choosing between single-character and paired-character rendering.
+ */
 export const isFullView = (s: Side): boolean =>
   s === Side.DEFENSE || s === Side.PROSECUTION || s === Side.WITNESS;
-
-// ---------------------------------------------------------------------
-// ARUP
-// ---------------------------------------------------------------------
-
-export enum AreaUpdateType {
-  PLAYER_COUNT = 0,
-  STATUS = 1,
-  CASE_MANAGER = 2,
-  LOCKED = 3,
-}
-
-export type AreaUpdateData = number[] | string[];

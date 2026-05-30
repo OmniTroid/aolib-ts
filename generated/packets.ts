@@ -2,6 +2,24 @@
 
 /* eslint-disable */
 
+import { AreaUpdateType, DeskModifier, EmoteModifier, Flip, ShoutModifier, Side, TextColor } from "./enums";
+
+
+import AreaUpdateTypeEnumSchema from "../schemas/AreaUpdateType.enum.json";
+
+import DeskModifierEnumSchema from "../schemas/DeskModifier.enum.json";
+
+import EmoteModifierEnumSchema from "../schemas/EmoteModifier.enum.json";
+
+import FlipEnumSchema from "../schemas/Flip.enum.json";
+
+import ShoutModifierEnumSchema from "../schemas/ShoutModifier.enum.json";
+
+import SideEnumSchema from "../schemas/Side.enum.json";
+
+import TextColorEnumSchema from "../schemas/TextColor.enum.json";
+
+
 import AESchema from "../schemas/AE.schema.json";
 
 import AMSchema from "../schemas/AM.schema.json";
@@ -264,6 +282,9 @@ export { default as askchaaSchema } from "../schemas/askchaa.schema.json";
 export { default as decryptorSchema } from "../schemas/decryptor.schema.json";
 
 
+export const enumSchemas = [AreaUpdateTypeEnumSchema, DeskModifierEnumSchema, EmoteModifierEnumSchema, FlipEnumSchema, ShoutModifierEnumSchema, SideEnumSchema, TextColorEnumSchema];
+
+
 export class AE {
   id!: number;
 
@@ -298,11 +319,11 @@ export class AN {
 
 
 export class ARUP {
-  update_type!: 0 | 1 | 2 | 3;
+  update_type!: AreaUpdateType;
   update_data!: (number | string)[];
 
   constructor(input: {
-    update_type: 0 | 1 | 2 | 3;
+    update_type: AreaUpdateType;
     update_data: (number | string)[];
   }) {
     this.update_type = input.update_type;
@@ -757,21 +778,21 @@ export class MCRequest {
 
 
 export class MSBroadcast {
-  desk_modifier!: 0 | 1 | 2 | 3 | 4 | 5;
+  desk_modifier!: DeskModifier;
   preanim!: string;
   character!: string;
   emote!: string;
   message!: string;
-  side!: "def" | "pro" | "hld" | "hlp" | "wit" | "jud" | "jur" | "sea";
+  side!: Side;
   sfx_name!: string;
-  emote_modifier!: 0 | 1 | 2 | 5 | 6;
+  emote_modifier!: EmoteModifier;
   char_id!: number;
   sfx_delay!: number;
-  shout_modifier!: 0 | 1 | 2 | 3 | 4;
+  shout_modifier!: ShoutModifier;
   evidence_id!: number;
-  flip!: 0 | 1 | 2 | 3;
+  flip!: Flip;
   realization!: boolean;
-  text_color!: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  text_color!: TextColor;
   showname!: string;
   paired_charid!: number;
   paired_name!: string;
@@ -784,7 +805,7 @@ export class MSBroadcast {
     x: number;
     y: number;
   };
-  paired_flip!: 0 | 1 | 2 | 3;
+  paired_flip!: Flip;
   noninterrupting_preanim!: boolean;
   sfx_looping!: boolean;
   screenshake!: boolean;
@@ -795,21 +816,21 @@ export class MSBroadcast {
   effect!: string;
 
   constructor(input: {
-    desk_modifier?: 0 | 1 | 2 | 3 | 4 | 5;
+    desk_modifier?: DeskModifier;
     preanim?: string;
     character: string;
     emote: string;
     message: string;
-    side: "def" | "pro" | "hld" | "hlp" | "wit" | "jud" | "jur" | "sea";
+    side: Side;
     sfx_name?: string;
-    emote_modifier?: 0 | 1 | 2 | 5 | 6;
+    emote_modifier?: EmoteModifier;
     char_id: number;
     sfx_delay?: number;
-    shout_modifier?: 0 | 1 | 2 | 3 | 4;
+    shout_modifier?: ShoutModifier;
     evidence_id?: number;
-    flip?: 0 | 1 | 2 | 3;
+    flip?: Flip;
     realization?: boolean;
-    text_color?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+    text_color?: TextColor;
     showname?: string;
     paired_charid?: number;
     paired_name?: string;
@@ -822,7 +843,7 @@ export class MSBroadcast {
     x: number;
     y: number;
   };
-    paired_flip?: 0 | 1 | 2 | 3;
+    paired_flip?: Flip;
     noninterrupting_preanim?: boolean;
     sfx_looping?: boolean;
     screenshake?: boolean;
@@ -867,21 +888,21 @@ export class MSBroadcast {
 
 
 export class MSRequest {
-  desk_modifier!: 0 | 1 | 2 | 3 | 4 | 5;
+  desk_modifier!: DeskModifier;
   preanim!: string;
   character!: string;
   emote!: string;
   message!: string;
-  side!: "def" | "pro" | "hld" | "hlp" | "wit" | "jud" | "jur" | "sea";
+  side!: Side;
   sfx_name!: string;
-  emote_modifier!: 0 | 1 | 2 | 5 | 6;
+  emote_modifier!: EmoteModifier;
   char_id!: number;
   sfx_delay!: number;
-  shout_modifier!: 0 | 1 | 2 | 3 | 4;
+  shout_modifier!: ShoutModifier;
   evidence_id!: number;
-  flip!: 0 | 1 | 2 | 3;
+  flip!: Flip;
   realization!: boolean;
-  text_color!: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  text_color!: TextColor;
   showname!: string;
   paired_charid!: number;
   offset!: {
@@ -898,21 +919,21 @@ export class MSRequest {
   effect!: string;
 
   constructor(input: {
-    desk_modifier?: 0 | 1 | 2 | 3 | 4 | 5;
+    desk_modifier?: DeskModifier;
     preanim?: string;
     character: string;
     emote: string;
     message: string;
-    side: "def" | "pro" | "hld" | "hlp" | "wit" | "jud" | "jur" | "sea";
+    side: Side;
     sfx_name?: string;
-    emote_modifier?: 0 | 1 | 2 | 5 | 6;
+    emote_modifier?: EmoteModifier;
     char_id: number;
     sfx_delay?: number;
-    shout_modifier?: 0 | 1 | 2 | 3 | 4;
+    shout_modifier?: ShoutModifier;
     evidence_id?: number;
-    flip?: 0 | 1 | 2 | 3;
+    flip?: Flip;
     realization?: boolean;
-    text_color?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+    text_color?: TextColor;
     showname?: string;
     paired_charid?: number;
     offset?: {
@@ -1135,10 +1156,10 @@ export class SM {
 
 
 export class SP {
-  side!: unknown;
+  side!: Side;
 
   constructor(input: {
-    side: unknown;
+    side: Side;
   }) {
     this.side = input.side;
   }

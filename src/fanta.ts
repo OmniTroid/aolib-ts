@@ -69,6 +69,28 @@ function getCodec(name: string): FantaCodec {
 }
 
 // ---------------------------------------------------------------------
+// $ref registry — mirrors Ajv's schema registry so the walker can look
+// through `$ref` to find the underlying type / enum.
+// ---------------------------------------------------------------------
+
+const refSchemas = new Map<string, JsonSchema>();
+
+export function registerRefSchema(id: string, schema: JsonSchema): void {
+  refSchemas.set(id, schema);
+}
+
+/**
+ * Resolve a `$ref` against the registry. Sibling keywords on the
+ * referring property (e.g. `default`) win over the referenced schema.
+ */
+function resolveRef(s: JsonSchema): JsonSchema {
+  if (!s.$ref) return s;
+  const target = refSchemas.get(s.$ref);
+  if (!target) return s;
+  return { ...target, ...s };
+}
+
+// ---------------------------------------------------------------------
 // Per-property token codecs.
 // ---------------------------------------------------------------------
 
@@ -78,7 +100,8 @@ function jsonType(s: JsonSchema): string | undefined {
   return undefined;
 }
 
-function encodeToken(schema: JsonSchema, value: unknown): string {
+function encodeToken(rawSchema: JsonSchema, value: unknown): string {
+  const schema = resolveRef(rawSchema);
   // `const` properties (literal padding like PV's _cid) emit the const
   // value regardless of what's in the packet — Ajv guarantees they
   // match.
@@ -108,7 +131,8 @@ function encodeScalar(t: string | undefined, value: unknown): string {
   }
 }
 
-function decodeToken(schema: JsonSchema, token: string, name: string): unknown {
+function decodeToken(rawSchema: JsonSchema, token: string, name: string): unknown {
+  const schema = resolveRef(rawSchema);
   // `const` — fanta wire delivers the const value at this slot; the
   // schema's const is the source of truth (Ajv would reject anything
   // else anyway).

@@ -22,6 +22,8 @@ export interface JsonSchema {
   title?: string;
   additionalProperties?: boolean;
   $schema?: string;
+  $id?: string;
+  $ref?: string;
 
   // Extension keywords.
   /** On nested objects: legacy-escape the `&` sub-separator on the wire. */

@@ -16,6 +16,8 @@
 
 import Ajv, { type ValidateFunction } from "ajv";
 import type { JsonSchema } from "./types";
+import { enumSchemas } from "../generated/packets";
+import { registerRefSchema } from "./fanta";
 
 const ajv = new Ajv({
   useDefaults: true,
@@ -25,6 +27,13 @@ const ajv = new Ajv({
   // benign keywords (`$schema`, `title`, our `x-fanta-*` extensions).
   strict: false,
 });
+
+// Register enum schemas so packet schemas' `$ref` resolves at both the
+// validator (Ajv) and the wire walker (fanta).
+for (const s of enumSchemas as JsonSchema[]) {
+  ajv.addSchema(s);
+  if (typeof s.$id === "string") registerRefSchema(s.$id, s);
+}
 
 const cache = new WeakMap<JsonSchema, ValidateFunction>();
 
