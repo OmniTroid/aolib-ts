@@ -51,7 +51,7 @@ function unescapeFanta(s: string): string {
 }
 
 function unescapeUnicode(s: string): string {
-  return s.replace(/\\u([\d\w]{1,})/gi, (_m, g) =>
+  return s.replace(/\\u([\d\w]{1,})/gi, (_m: string, g: string) =>
     String.fromCharCode(parseInt(g, 16)),
   );
 }
@@ -246,7 +246,7 @@ export function nested<S extends Record<string, Field<unknown>>>(
   subfields: S,
   separator: string = "&",
 ): NestedField<S> {
-  const keys = Object.keys(subfields);
+  const entries = Object.entries(subfields);
   return {
     kind: "nested",
     subfields,
@@ -254,15 +254,15 @@ export function nested<S extends Record<string, Field<unknown>>>(
     fromFanta(token, name) {
       const parts = token.split(separator);
       const result: Record<string, unknown> = {};
-      keys.forEach((k, i) => {
-        result[k] = subfields[k].fromFanta(parts[i] ?? "", `${name}.${k}`);
+      entries.forEach(([k, field], i) => {
+        result[k] = field.fromFanta(parts[i] ?? "", `${name}.${k}`);
       });
       return result as NestedValue<S>;
     },
     toFanta(value) {
-      return keys
-        .map((k) =>
-          subfields[k].toFanta((value as Record<string, unknown>)[k]),
+      return entries
+        .map(([k, field]) =>
+          field.toFanta((value as Record<string, unknown>)[k]),
         )
         .join(separator);
     },
@@ -303,7 +303,7 @@ export function array<E extends Field<unknown>>(element: E): ArrayField<E> {
     kind: "array",
     element,
     fromFanta: (_token, name) => reject(name) as unknown[],
-    toFanta: () => reject("(toFanta)") as string,
+    toFanta: () => reject("(toFanta)"),
   };
 }
 

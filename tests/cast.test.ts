@@ -59,7 +59,7 @@ describe("cast: literal stripping", () => {
     // Even if the caller smuggled in a literal key (e.g. via decode
     // bypassing the walker), cast strips it.
     const fields = { _0: lit(0), char_id: num() } satisfies Fields;
-    const out = cast(fields, { _0: 9, char_id: 5 } as Record<string, unknown>);
+    const out = cast(fields, { _0: 9, char_id: 5 });
     expect(out).toEqual({ char_id: 5 });
   });
 });

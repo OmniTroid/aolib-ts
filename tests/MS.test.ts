@@ -486,14 +486,14 @@ describe("MS: session integration", () => {
     });
     expect(out.length).toBe(1);
     // 26-field wire shape.
-    expect(out[0].split("#").length).toBe(28);
+    expect(out[0]!.split("#").length).toBe(28);
   });
 
   it("server.on.MS receives MSBroadcast shape (has paired_name)", () => {
     const s = server({ send: () => {} });
     let received: Out<typeof MSBroadcast> | undefined;
     s.on.MS((p) => {
-      received = p as Out<typeof MSBroadcast>;
+      received = p;
     });
     // A 30-field broadcast.
     const wire = encode(
@@ -529,14 +529,14 @@ describe("MS: session integration", () => {
       paired_offset: { x: 50, y: 0 },
     });
     expect(out.length).toBe(1);
-    expect(out[0].split("#").length).toBe(32);
+    expect(out[0]!.split("#").length).toBe(32);
   });
 
   it("client.on.MS receives MSRequest shape (no paired_name field present)", () => {
     const c = client({ send: () => {} });
     let received: Out<typeof MSRequest> | undefined;
     c.on.MS((p) => {
-      received = p as Out<typeof MSRequest>;
+      received = p;
     });
     const wire = encode(
       MSRequest,
@@ -586,9 +586,9 @@ describe("MS: type derivation", () => {
     // compiles, we're good. Runtime is trivial.
     const sideIn: In<typeof MSRequest>["side"] = Side.WITNESS;
     const offIn: In<typeof MSRequest>["offset"] | undefined = undefined;
-    void sideIn;
-    void offIn;
     const off: Offset = { x: 1, y: 2 };
+    expect(sideIn).toBe(Side.WITNESS);
+    expect(offIn).toBeUndefined();
     expect(off).toEqual({ x: 1, y: 2 });
   });
 });

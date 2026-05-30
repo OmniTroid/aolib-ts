@@ -30,8 +30,8 @@ import type {
 } from "./fields";
 import type { Fields } from "./schema";
 
-export function cast<F extends Fields>(
-  fields: F,
+export function cast(
+  fields: Fields,
   partial: Record<string, unknown>,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};

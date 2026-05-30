@@ -63,7 +63,7 @@ const unescapeFanta = (s: string): string =>
 const parseUpdateType = (s: string): AreaUpdateType => {
   const n = Number(s);
   return Number.isInteger(n) && n >= 0 && n <= 3
-    ? (n as AreaUpdateType)
+    ? (n)
     : AreaUpdateType.PLAYER_COUNT;
 };
 

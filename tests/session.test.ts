@@ -46,10 +46,10 @@ describe("server(): send (C2S)", () => {
   it("send.<S2C> throws role-aware wrong-direction error", () => {
     const s = server(makeBuf().config);
     const send = s.send as unknown as Record<string, (p: unknown) => void>;
-    expect(() => send.BB({ message: "x" })).toThrow(
+    expect(() => { send.BB!({ message: "x" }); }).toThrow(
       /server-session\.send\.BB.*server -> client/,
     );
-    expect(() => send.PV({ player_id: 1, char_id: 1 })).toThrow(
+    expect(() => { send.PV!({ player_id: 1, char_id: 1 }); }).toThrow(
       /server-session\.send\.PV.*server -> client/,
     );
   });
@@ -57,14 +57,14 @@ describe("server(): send (C2S)", () => {
   it("send.<unknown header> throws a no-schema error", () => {
     const s = server(makeBuf().config);
     const send = s.send as unknown as Record<string, () => void>;
-    expect(() => send.XYZ()).toThrow(/no schema registered for header 'XYZ'/);
+    expect(() => { send.XYZ!(); }).toThrow(/no schema registered for header 'XYZ'/);
   });
 
   it("send on a closed session throws", () => {
     const { config } = makeBuf();
     const s = server(config);
     s.close();
-    expect(() => s.send.HI({ hdid: "x" })).toThrow(/closed session/);
+    expect(() => { s.send.HI({ hdid: "x" }); }).toThrow(/closed session/);
   });
 });
 
@@ -94,10 +94,10 @@ describe("server(): on (S2C)", () => {
   it("on.<C2S> throws role-aware wrong-direction error", () => {
     const s = server(makeBuf().config);
     const on = s.on as unknown as Record<string, (h: () => void) => void>;
-    expect(() => on.HI(() => {})).toThrow(
+    expect(() => { on.HI!(() => {}); }).toThrow(
       /server-session\.on\.HI.*client -> server/,
     );
-    expect(() => on.CC(() => {})).toThrow(
+    expect(() => { on.CC!(() => {}); }).toThrow(
       /server-session\.on\.CC.*client -> server/,
     );
   });
@@ -136,7 +136,7 @@ describe("client(): send (S2C)", () => {
   it("send.<C2S> throws role-aware wrong-direction error", () => {
     const c = client(makeBuf().config);
     const send = c.send as unknown as Record<string, (p: unknown) => void>;
-    expect(() => send.HI({ hdid: "x" })).toThrow(
+    expect(() => { send.HI!({ hdid: "x" }); }).toThrow(
       /client-session\.send\.HI.*client -> server/,
     );
   });
@@ -166,7 +166,7 @@ describe("client(): on (C2S)", () => {
   it("on.<S2C> throws role-aware wrong-direction error", () => {
     const c = client(makeBuf().config);
     const on = c.on as unknown as Record<string, (h: () => void) => void>;
-    expect(() => on.BB(() => {})).toThrow(
+    expect(() => { on.BB!(() => {}); }).toThrow(
       /client-session\.on\.BB.*server -> client/,
     );
   });
@@ -188,7 +188,7 @@ describe("bidirectional MC", () => {
     // Server (them) broadcasts an MC — has `channel` and `looping`.
     let received: Record<string, unknown> | undefined;
     s.on.MC((p) => {
-      received = p as Record<string, unknown>;
+      received = p;
     });
     s.receive("MC#track1#5#Phoenix#1#2#3#%");
     expect(received).toMatchObject({
@@ -217,7 +217,7 @@ describe("bidirectional MC", () => {
 
     let received: Record<string, unknown> | undefined;
     c.on.MC((p) => {
-      received = p as Record<string, unknown>;
+      received = p;
     });
     c.receive("MC#track3#7##0#%");
     expect(received).toEqual({
@@ -273,7 +273,7 @@ describe("receive: hooks", () => {
     }).config);
     s.receive("{not really json}");
     expect(calls.length).toBe(1);
-    expect(calls[0].wire).toBe("{not really json}");
+    expect(calls[0]!.wire).toBe("{not really json}");
   });
 
   it("onMalformedFrame fires when JSON envelope has no $header", () => {
@@ -283,7 +283,7 @@ describe("receive: hooks", () => {
     }).config);
     s.receive('{"value":"oops"}');
     expect(calls.length).toBe(1);
-    expect(calls[0].message).toMatch(/\$header/);
+    expect(calls[0]!.message).toMatch(/\$header/);
   });
 
   it("onUnknownHeader fires when no schema is registered for the header", () => {
@@ -316,8 +316,8 @@ describe("receive: hooks", () => {
     // PV requires two numbers but we send "abc" as the second.
     s.receive("PV#1#CID#abc#%");
     expect(calls.length).toBe(1);
-    expect(calls[0].header).toBe("PV");
-    expect(calls[0].err.message).toMatch(/Invalid number/);
+    expect(calls[0]!.header).toBe("PV");
+    expect(calls[0]!.err.message).toMatch(/Invalid number/);
   });
 
   it("onUnhandled fires when no handler is registered for a valid header", () => {
@@ -327,8 +327,8 @@ describe("receive: hooks", () => {
     }).config);
     s.receive("BB#hi#%");
     expect(calls.length).toBe(1);
-    expect(calls[0].header).toBe("BB");
-    expect(calls[0].packet).toEqual({ message: "hi" });
+    expect(calls[0]!.header).toBe("BB");
+    expect(calls[0]!.packet).toEqual({ message: "hi" });
   });
 
   it("onHandlerError fires when the application handler throws", () => {
@@ -341,8 +341,8 @@ describe("receive: hooks", () => {
     });
     s.receive("BB#hi#%");
     expect(calls.length).toBe(1);
-    expect(calls[0].header).toBe("BB");
-    expect(calls[0].err.message).toBe("boom");
+    expect(calls[0]!.header).toBe("BB");
+    expect(calls[0]!.err.message).toBe("boom");
   });
 
   it("each hook routes only to its own failure mode, not to the others", () => {
@@ -451,7 +451,7 @@ describe("defaults: missing hooks fall back to console (no throw)", () => {
   it("missing onMalformedFrame doesn't throw", () => {
     withSilencedConsole(() => {
       const s = server(makeBuf().config);
-      expect(() => s.receive("{garbage}")).not.toThrow();
+      expect(() => { s.receive("{garbage}"); }).not.toThrow();
     });
   });
 
@@ -461,7 +461,7 @@ describe("defaults: missing hooks fall back to console (no throw)", () => {
       s.on.BB(() => {
         throw new Error("boom");
       });
-      expect(() => s.receive("BB#hi#%")).not.toThrow();
+      expect(() => { s.receive("BB#hi#%"); }).not.toThrow();
     });
   });
 });

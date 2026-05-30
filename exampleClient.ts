@@ -38,7 +38,7 @@ const ws = new WebSocket("wss://lemmy.example.com");
 
 // One session, representing the server we're talking to.
 const server = aolib.server({
-  send: (wire) => ws.send(wire),
+  send: (wire) => { ws.send(wire); },
 
   // Loud during development — quietly dropping unhandled packets is
   // easy to miss when a handler regresses.
@@ -48,7 +48,7 @@ const server = aolib.server({
 });
 
 // Feed every inbound WebSocket frame to the session. Never throws.
-ws.onmessage = (e) => server.receive(e.data);
+ws.onmessage = (e) => { server.receive(e.data); };
 
 // ---------------------------------------------------------------------
 // Register handlers for packets the SERVER sends us.
@@ -66,10 +66,10 @@ server.on.MC((packet) => {
   playMusic(packet.name, packet.channel);
 });
 
-server.on.BB((packet) => alert(packet.message));
-server.on.PV((packet) => loadCharacter(packet.char_id));
-server.on.SM((packet) => loadMusicList(packet.music_list.map((m) => m.name)));
-server.on.DONE(() => console.log("handshake done"));
+server.on.BB((packet) => { alert(packet.message); });
+server.on.PV((packet) => { loadCharacter(packet.char_id); });
+server.on.SM((packet) => { loadMusicList(packet.music_list.map((m) => m.name)); });
+server.on.DONE(() => { console.log("handshake done"); });
 
 // ---------------------------------------------------------------------
 // Send packets TO the server. TS enforces input shape per header.

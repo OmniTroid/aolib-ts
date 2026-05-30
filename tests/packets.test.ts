@@ -237,7 +237,7 @@ describe("bidirectional packets", () => {
 
     const s = server({ send: () => {} });
     let received: Record<string, unknown> | undefined;
-    s.on.CT((p) => { received = p as Record<string, unknown>; });
+    s.on.CT((p) => { received = p; });
     s.receive("CT#Server#hi#1#%");
     expect(received).toEqual({ name: "Server", message: "hi", is_from_server: true });
 

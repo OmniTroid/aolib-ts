@@ -228,7 +228,7 @@ describe("toJson", () => {
   it("literal is identity (caller of toJson never includes literals in envelope)", () => {
     // The schema walker strips literals before calling toJson; this
     // is just the field's behavior if called.
-    expect(toJson(lit(0), 0 as unknown as never)).toBe(0);
+    expect(toJson(lit(0), 0)).toBe(0);
   });
 
   it("nested recurses into sub-fields", () => {

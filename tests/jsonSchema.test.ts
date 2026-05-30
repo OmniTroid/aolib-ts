@@ -64,12 +64,12 @@ describe("toJsonSchema", () => {
       offset: nested({ x: num(), y: opt(num(), 0) }),
     });
     const props = toJsonSchema(FOO).properties as Record<string, Record<string, unknown>>;
-    expect(props.offset.type).toBe("object");
-    expect(props.offset.additionalProperties).toBe(false);
-    const offsetProps = props.offset.properties as Record<string, unknown>;
+    expect(props.offset!.type).toBe("object");
+    expect(props.offset!.additionalProperties).toBe(false);
+    const offsetProps = props.offset!.properties as Record<string, unknown>;
     expect(offsetProps.x).toEqual({ type: "number" });
     expect(offsetProps.y).toEqual({ type: "number", default: 0 });
-    expect(props.offset.required).toEqual(["x"]);
+    expect(props.offset!.required).toEqual(["x"]);
   });
 
   it("array fields emit type: array with typed items", () => {
@@ -86,7 +86,7 @@ describe("toJsonSchema", () => {
       peers: array(nested({ uid: num(), name: str() })),
     });
     const props = toJsonSchema(VS_PEERS).properties as Record<string, Record<string, unknown>>;
-    const peers = props.peers;
+    const peers = props.peers!;
     expect(peers.type).toBe("array");
     const items = peers.items as Record<string, unknown>;
     expect(items.type).toBe("object");

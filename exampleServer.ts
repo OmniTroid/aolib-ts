@@ -43,7 +43,7 @@ const wss = new WebSocketServer({ port: 8080 });
 
 wss.on("connection", (ws) => {
   const client = aolib.client({
-    send: (wire) => ws.send(wire),
+    send: (wire) => { ws.send(wire); },
 
     onUnhandled: (header, packet) => {
       console.warn(`[aolib] no handler for ${header} from client`, packet);
@@ -52,7 +52,7 @@ wss.on("connection", (ws) => {
 
   clients.add(client);
   ws.on("close", () => clients.delete(client));
-  ws.on("message", (data) => client.receive(data.toString()));
+  ws.on("message", (data) => { client.receive(data.toString()); });
 
   // Advertise wire-format support. If THIS particular client echoes
   // back in JSON, THIS session auto-flips to JSON for outbound. Other

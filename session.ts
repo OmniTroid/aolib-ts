@@ -112,7 +112,7 @@ function makeSession(role: Role, config: SessionConfig): ServerSession & ClientS
   let closed = false;
   const handlers: Record<string, (packet: unknown) => void> = {};
 
-  const send = new Proxy({} as Record<string, (packet: unknown) => void>, {
+  const send = new Proxy({}, {
     get: (_t, prop) => {
       if (typeof prop !== "string") return undefined;
       const header = prop;
@@ -133,7 +133,7 @@ function makeSession(role: Role, config: SessionConfig): ServerSession & ClientS
     },
   });
 
-  const on = new Proxy({} as Record<string, (handler: (packet: unknown) => void) => void>, {
+  const on = new Proxy({}, {
     get: (_t, prop) => {
       if (typeof prop !== "string") return undefined;
       const header = prop;
@@ -199,7 +199,10 @@ function makeSession(role: Role, config: SessionConfig): ServerSession & ClientS
 
   function close(): void {
     closed = true;
-    for (const k of Object.keys(handlers)) delete handlers[k];
+    for (const k of Object.keys(handlers)) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- clearing all handler keys on close
+      delete handlers[k];
+    }
   }
 
   function setJsonMode(enabled: boolean): void {

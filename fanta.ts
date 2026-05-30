@@ -43,8 +43,8 @@ import type { Fields } from "./schema";
  * `packet` is the cast-filled typed packet (defaults already applied,
  * required fields validated). Every non-literal slot reads from it.
  */
-export function toFantaArgs<F extends Fields>(
-  fields: F,
+export function toFantaArgs(
+  fields: Fields,
   packet: Record<string, unknown>,
 ): string[] {
   const args: string[] = [];
@@ -53,7 +53,7 @@ export function toFantaArgs<F extends Fields>(
       case "literal": {
         // Emit the fixed value; packet doesn't carry literals.
         const f = field as LiteralField<unknown>;
-        args.push(field.toFanta(f.value as never));
+        args.push(field.toFanta(f.value));
         break;
       }
       case "array": {
@@ -61,14 +61,14 @@ export function toFantaArgs<F extends Fields>(
         const f = field as ArrayField<Field<unknown>>;
         const items = packet[name] as unknown[];
         for (const item of items) {
-          args.push(f.element.toFanta(item as never));
+          args.push(f.element.toFanta(item));
         }
         break;
       }
       default: {
         // string / number / boolean / optional / nested / custom — one
         // slot per field, codec already on the field.
-        args.push(field.toFanta(packet[name] as never));
+        args.push(field.toFanta(packet[name]));
         break;
       }
     }
@@ -85,8 +85,8 @@ export function toFantaArgs<F extends Fields>(
  * remaining slots; optionals omit their key when the wire ended early
  * (cast fills the default from `inner.default`).
  */
-export function fromFantaArgs<F extends Fields>(
-  fields: F,
+export function fromFantaArgs(
+  fields: Fields,
   args: string[],
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};

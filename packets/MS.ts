@@ -127,7 +127,7 @@ export const isFullView = (s: Side): boolean =>
 const parseDeskModifier = (s: string): DeskModifier => {
   const n = Number(s);
   return Number.isInteger(n) && n >= 0 && n <= 5
-    ? (n as DeskModifier)
+    ? (n)
     : DeskModifier.SHOWN;
 };
 
@@ -139,7 +139,7 @@ const parseEmoteModifier = (s: string): EmoteModifier => {
     case 2:
     case 5:
     case 6:
-      return n as EmoteModifier;
+      return n;
     default:
       return EmoteModifier.NO_PREANIM;
   }
@@ -150,19 +150,19 @@ const parseShoutModifier = (s: string): ShoutModifier => {
   const prefix = s.split("&")[0];
   const n = Number(prefix);
   return Number.isInteger(n) && n >= 0 && n <= 4
-    ? (n as ShoutModifier)
+    ? (n)
     : ShoutModifier.NONE;
 };
 
 const parseFlip = (s: string): Flip => {
   const n = Number(s);
-  return Number.isInteger(n) && n >= 0 && n <= 3 ? (n as Flip) : Flip.NONE;
+  return Number.isInteger(n) && n >= 0 && n <= 3 ? (n) : Flip.NONE;
 };
 
 const parseTextColor = (s: string): TextColor => {
   const n = Number(s);
   return Number.isInteger(n) && n >= 0 && n <= 9
-    ? (n as TextColor)
+    ? (n)
     : TextColor.WHITE;
 };
 
