@@ -189,8 +189,6 @@ function enumField<T>(
   const field = custom<T>({
     fromFanta: (token) => parse(token),
     toFanta: (value) => String(value),
-    fromJson: (value) => parse(String(value)),
-    toJson: (value) => value,
   }) as CustomField<T> & { jsonSchema: Record<string, unknown> };
   field.jsonSchema = jsonSchema;
   return field;

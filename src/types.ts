@@ -87,13 +87,13 @@ export type FieldOutValue<F> =
 /** Caller input shape: required fields required, optionals optional, literals stripped. */
 export type InFields<F extends Record<string, Field<unknown>>> =
   {
-    [K in keyof F as F[K] extends LiteralField<unknown>
+    [K in keyof F as F[K] extends LiteralField<string | number | boolean>
       ? never
       : F[K] extends OptionalField<unknown>
         ? never
         : K]: FieldInValue<F[K]>;
   } & {
-    [K in keyof F as F[K] extends LiteralField<unknown>
+    [K in keyof F as F[K] extends LiteralField<string | number | boolean>
       ? never
       : F[K] extends OptionalField<unknown>
         ? K
@@ -102,7 +102,7 @@ export type InFields<F extends Record<string, Field<unknown>>> =
 
 /** Decoded output shape: all visible fields required (defaults filled), literals stripped. */
 export type OutFields<F extends Record<string, Field<unknown>>> = {
-  [K in keyof F as F[K] extends LiteralField<unknown>
+  [K in keyof F as F[K] extends LiteralField<string | number | boolean>
     ? never
     : K]: FieldOutValue<F[K]>;
 };

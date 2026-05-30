@@ -19,6 +19,7 @@
 
 import { packet } from "../schema";
 import { custom, type CustomField } from "../fields";
+import { escapeFanta, unescapeFanta } from "../fanta";
 
 /** Which area-metadata field the packet updates. */
 export enum AreaUpdateType {
@@ -36,27 +37,6 @@ export enum AreaUpdateType {
 export type AreaUpdateData = number[] | string[];
 
 // ---------------------------------------------------------------------
-// Chat-escape helpers — string-typed payload values may contain `#` /
-// `&` / `%` / `$`, and have to be escaped on the way out. Mirrors the
-// legacy ARUP behavior so a fresh aolib client can talk to a legacy
-// server without metadata corruption.
-// ---------------------------------------------------------------------
-
-const escapeFanta = (s: string): string =>
-  s
-    .replaceAll("#", "<num>")
-    .replaceAll("&", "<and>")
-    .replaceAll("%", "<percent>")
-    .replaceAll("$", "<dollar>");
-
-const unescapeFanta = (s: string): string =>
-  s
-    .replaceAll("<num>", "#")
-    .replaceAll("<and>", "&")
-    .replaceAll("<percent>", "%")
-    .replaceAll("<dollar>", "$");
-
-// ---------------------------------------------------------------------
 // Field types
 // ---------------------------------------------------------------------
 
@@ -71,8 +51,6 @@ const areaUpdateTypeField = (): CustomField<AreaUpdateType> => {
   const field = custom<AreaUpdateType>({
     fromFanta: (token) => parseUpdateType(token),
     toFanta: (value) => String(value),
-    fromJson: (value) => parseUpdateType(String(value)),
-    toJson: (value) => value,
   }) as CustomField<AreaUpdateType> & { jsonSchema: Record<string, unknown> };
   field.jsonSchema = { type: "integer", enum: [0, 1, 2, 3] };
   return field;
