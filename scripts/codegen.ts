@@ -1,10 +1,11 @@
 /**
- * Codegen: reads schemas/ and emits generated/packets.ts + generated/enums.ts.
+ * Codegen: reads aolib-schemas/ and emits generated/packets.ts + generated/enums.ts.
  *
  * Inputs:
- *   - schemas/<Name>.schema.json — one per packet
- *   - schemas/<Name>.enum.json   — one per named enum, referenced from packet
- *     schemas via `{ "$ref": "<Name>.enum.json" }`. Each carries an
+ *   - aolib-schemas/schemas/packets/<Name>.schema.json — one per packet
+ *   - aolib-schemas/schemas/enums/<Name>.enum.json     — one per named enum,
+ *     referenced from packet schemas via `{ "$ref": "<Name>.enum.json" }`.
+ *     Each carries an
  *     `x-enum-names` array parallel to the `enum` values so codegen
  *     can produce a TS `enum`.
  *   - scripts/registry.json — direction routing per header
@@ -33,7 +34,9 @@ import { fileURLToPath } from "node:url";
 
 const SCRIPTS_DIR = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(SCRIPTS_DIR, "..");
-const SCHEMAS_DIR = join(ROOT, "schemas");
+const SCHEMAS_ROOT = join(ROOT, "aolib-schemas/schemas");
+const PACKETS_DIR = join(SCHEMAS_ROOT, "packets");
+const ENUMS_DIR = join(SCHEMAS_ROOT, "enums");
 const REGISTRY_FILE = join(SCRIPTS_DIR, "registry.json");
 const OUT_PACKETS = join(ROOT, "generated/packets.ts");
 const OUT_ENUMS = join(ROOT, "generated/enums.ts");
@@ -89,19 +92,19 @@ function loadRegistry(): Registry {
 }
 
 function listPacketNames(): string[] {
-  return readdirSync(SCHEMAS_DIR)
+  return readdirSync(PACKETS_DIR)
     .filter((f) => f.endsWith(".schema.json"))
     .map((f) => f.replace(/\.schema\.json$/, ""));
 }
 
 function listEnumFiles(): string[] {
-  return readdirSync(SCHEMAS_DIR).filter((f) => f.endsWith(".enum.json"));
+  return readdirSync(ENUMS_DIR).filter((f) => f.endsWith(".enum.json"));
 }
 
 function loadEnums(): Map<string, EnumDef> {
   const out = new Map<string, EnumDef>();
   for (const filename of listEnumFiles()) {
-    const schema = loadJson(join(SCHEMAS_DIR, filename));
+    const schema = loadJson(join(ENUMS_DIR, filename));
     const name = filename.replace(/\.enum\.json$/, "");
     if (!schema.enum || !schema["x-enum-names"]) {
       throw new Error(`Enum schema ${filename} missing 'enum' or 'x-enum-names'`);
@@ -266,7 +269,7 @@ function emitClass(name: string, schema: JsonSchema, ctx: RenderCtx): string {
 
 function emitEnumsFile(enums: Map<string, EnumDef>): string {
   const parts: string[] = [
-    "// AUTO-GENERATED from schemas/*.enum.json. Do not edit; run `bun run codegen`.\n",
+    "// AUTO-GENERATED from aolib-schemas/schemas/enums/*. Do not edit; run `bun run codegen`.\n",
   ];
   // Sort by name for deterministic output.
   const sorted = [...enums.values()].sort((a, b) => a.name.localeCompare(b.name));
@@ -385,7 +388,7 @@ function main(): void {
   const ctx: RenderCtx = { enums, enumImports: new Set() };
   const classBlocks: string[] = [];
   for (const name of packets) {
-    const schema = loadJson(join(SCHEMAS_DIR, `${name}.schema.json`));
+    const schema = loadJson(join(PACKETS_DIR, `${name}.schema.json`));
     classBlocks.push(emitClass(name, schema, ctx));
   }
 
@@ -394,7 +397,7 @@ function main(): void {
     : `import { ${[...ctx.enumImports].sort().join(", ")} } from "./enums";\n\n`;
 
   const parts: string[] = [
-    "// AUTO-GENERATED from schemas/. Do not edit; run `bun run codegen`.\n",
+    "// AUTO-GENERATED from aolib-schemas/schemas/. Do not edit; run `bun run codegen`.\n",
     "/* eslint-disable */\n",
     enumImports,
   ];
@@ -405,17 +408,17 @@ function main(): void {
     .map((e) => e.name)
     .sort();
   for (const name of enumNames) {
-    parts.push(`import ${name}EnumSchema from "../schemas/${name}.enum.json";\n`);
+    parts.push(`import ${name}EnumSchema from "../aolib-schemas/schemas/enums/${name}.enum.json";\n`);
   }
   parts.push("");
 
   for (const name of packets) {
-    parts.push(`import ${name}Schema from "../schemas/${name}.schema.json";\n`);
+    parts.push(`import ${name}Schema from "../aolib-schemas/schemas/packets/${name}.schema.json";\n`);
   }
   parts.push("");
 
   for (const name of packets) {
-    parts.push(`export { default as ${name}Schema } from "../schemas/${name}.schema.json";\n`);
+    parts.push(`export { default as ${name}Schema } from "../aolib-schemas/schemas/packets/${name}.schema.json";\n`);
   }
   parts.push("");
 

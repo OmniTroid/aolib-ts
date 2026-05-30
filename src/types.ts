@@ -1,7 +1,7 @@
 /**
  * Runtime types for the JSON-Schema-driven walker and validator.
  *
- * The packet schemas themselves are generated from `schemas/` into
+ * The packet schemas themselves are generated from `aolib-schemas/` into
  * `../generated/packets.ts`, alongside the typed interfaces. This file
  * just declares the loose structural shapes the walker reads.
  */

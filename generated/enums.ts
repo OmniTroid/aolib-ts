@@ -1,4 +1,4 @@
-// AUTO-GENERATED from schemas/*.enum.json. Do not edit; run `bun run codegen`.
+// AUTO-GENERATED from aolib-schemas/schemas/enums/*. Do not edit; run `bun run codegen`.
 
 /** Discriminator for ARUP payloads: 0 = player counts (numbers), 1/2/3 = area metadata strings. */
 export enum AreaUpdateType {

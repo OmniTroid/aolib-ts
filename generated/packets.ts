@@ -1,285 +1,285 @@
-// AUTO-GENERATED from schemas/. Do not edit; run `bun run codegen`.
+// AUTO-GENERATED from aolib-schemas/schemas/. Do not edit; run `bun run codegen`.
 
 /* eslint-disable */
 
 import { AreaUpdateType, DeskModifier, EmoteModifier, Flip, ShoutModifier, Side, TextColor } from "./enums";
 
 
-import AreaUpdateTypeEnumSchema from "../schemas/AreaUpdateType.enum.json";
+import AreaUpdateTypeEnumSchema from "../aolib-schemas/schemas/enums/AreaUpdateType.enum.json";
 
-import DeskModifierEnumSchema from "../schemas/DeskModifier.enum.json";
+import DeskModifierEnumSchema from "../aolib-schemas/schemas/enums/DeskModifier.enum.json";
 
-import EmoteModifierEnumSchema from "../schemas/EmoteModifier.enum.json";
+import EmoteModifierEnumSchema from "../aolib-schemas/schemas/enums/EmoteModifier.enum.json";
 
-import FlipEnumSchema from "../schemas/Flip.enum.json";
+import FlipEnumSchema from "../aolib-schemas/schemas/enums/Flip.enum.json";
 
-import ShoutModifierEnumSchema from "../schemas/ShoutModifier.enum.json";
+import ShoutModifierEnumSchema from "../aolib-schemas/schemas/enums/ShoutModifier.enum.json";
 
-import SideEnumSchema from "../schemas/Side.enum.json";
+import SideEnumSchema from "../aolib-schemas/schemas/enums/Side.enum.json";
 
-import TextColorEnumSchema from "../schemas/TextColor.enum.json";
+import TextColorEnumSchema from "../aolib-schemas/schemas/enums/TextColor.enum.json";
 
 
-import AESchema from "../schemas/AE.schema.json";
+import AESchema from "../aolib-schemas/schemas/packets/AE.schema.json";
 
-import AMSchema from "../schemas/AM.schema.json";
+import AMSchema from "../aolib-schemas/schemas/packets/AM.schema.json";
 
-import ANSchema from "../schemas/AN.schema.json";
+import ANSchema from "../aolib-schemas/schemas/packets/AN.schema.json";
 
-import ARUPSchema from "../schemas/ARUP.schema.json";
+import ARUPSchema from "../aolib-schemas/schemas/packets/ARUP.schema.json";
 
-import ASSSchema from "../schemas/ASS.schema.json";
+import ASSSchema from "../aolib-schemas/schemas/packets/ASS.schema.json";
 
-import AUTHSchema from "../schemas/AUTH.schema.json";
+import AUTHSchema from "../aolib-schemas/schemas/packets/AUTH.schema.json";
 
-import BBSchema from "../schemas/BB.schema.json";
+import BBSchema from "../aolib-schemas/schemas/packets/BB.schema.json";
 
-import BDSchema from "../schemas/BD.schema.json";
+import BDSchema from "../aolib-schemas/schemas/packets/BD.schema.json";
 
-import BNSchema from "../schemas/BN.schema.json";
+import BNSchema from "../aolib-schemas/schemas/packets/BN.schema.json";
 
-import CCSchema from "../schemas/CC.schema.json";
+import CCSchema from "../aolib-schemas/schemas/packets/CC.schema.json";
 
-import CHSchema from "../schemas/CH.schema.json";
+import CHSchema from "../aolib-schemas/schemas/packets/CH.schema.json";
 
-import CHECKSchema from "../schemas/CHECK.schema.json";
+import CHECKSchema from "../aolib-schemas/schemas/packets/CHECK.schema.json";
 
-import CISchema from "../schemas/CI.schema.json";
+import CISchema from "../aolib-schemas/schemas/packets/CI.schema.json";
 
-import CTBroadcastSchema from "../schemas/CTBroadcast.schema.json";
+import CTBroadcastSchema from "../aolib-schemas/schemas/packets/CTBroadcast.schema.json";
 
-import CTRequestSchema from "../schemas/CTRequest.schema.json";
+import CTRequestSchema from "../aolib-schemas/schemas/packets/CTRequest.schema.json";
 
-import CharsCheckSchema from "../schemas/CharsCheck.schema.json";
+import CharsCheckSchema from "../aolib-schemas/schemas/packets/CharsCheck.schema.json";
 
-import DESchema from "../schemas/DE.schema.json";
+import DESchema from "../aolib-schemas/schemas/packets/DE.schema.json";
 
-import DONESchema from "../schemas/DONE.schema.json";
+import DONESchema from "../aolib-schemas/schemas/packets/DONE.schema.json";
 
-import EESchema from "../schemas/EE.schema.json";
+import EESchema from "../aolib-schemas/schemas/packets/EE.schema.json";
 
-import EISchema from "../schemas/EI.schema.json";
+import EISchema from "../aolib-schemas/schemas/packets/EI.schema.json";
 
-import EMSchema from "../schemas/EM.schema.json";
+import EMSchema from "../aolib-schemas/schemas/packets/EM.schema.json";
 
-import FASchema from "../schemas/FA.schema.json";
+import FASchema from "../aolib-schemas/schemas/packets/FA.schema.json";
 
-import FLSchema from "../schemas/FL.schema.json";
+import FLSchema from "../aolib-schemas/schemas/packets/FL.schema.json";
 
-import FMSchema from "../schemas/FM.schema.json";
+import FMSchema from "../aolib-schemas/schemas/packets/FM.schema.json";
 
-import HISchema from "../schemas/HI.schema.json";
+import HISchema from "../aolib-schemas/schemas/packets/HI.schema.json";
 
-import HPSchema from "../schemas/HP.schema.json";
+import HPSchema from "../aolib-schemas/schemas/packets/HP.schema.json";
 
-import IDClientSchema from "../schemas/IDClient.schema.json";
+import IDClientSchema from "../aolib-schemas/schemas/packets/IDClient.schema.json";
 
-import IDServerSchema from "../schemas/IDServer.schema.json";
+import IDServerSchema from "../aolib-schemas/schemas/packets/IDServer.schema.json";
 
-import JDSchema from "../schemas/JD.schema.json";
+import JDSchema from "../aolib-schemas/schemas/packets/JD.schema.json";
 
-import KBSchema from "../schemas/KB.schema.json";
+import KBSchema from "../aolib-schemas/schemas/packets/KB.schema.json";
 
-import KKSchema from "../schemas/KK.schema.json";
+import KKSchema from "../aolib-schemas/schemas/packets/KK.schema.json";
 
-import LESchema from "../schemas/LE.schema.json";
+import LESchema from "../aolib-schemas/schemas/packets/LE.schema.json";
 
-import MASchema from "../schemas/MA.schema.json";
+import MASchema from "../aolib-schemas/schemas/packets/MA.schema.json";
 
-import MCBroadcastSchema from "../schemas/MCBroadcast.schema.json";
+import MCBroadcastSchema from "../aolib-schemas/schemas/packets/MCBroadcast.schema.json";
 
-import MCRequestSchema from "../schemas/MCRequest.schema.json";
+import MCRequestSchema from "../aolib-schemas/schemas/packets/MCRequest.schema.json";
 
-import MSBroadcastSchema from "../schemas/MSBroadcast.schema.json";
+import MSBroadcastSchema from "../aolib-schemas/schemas/packets/MSBroadcast.schema.json";
 
-import MSRequestSchema from "../schemas/MSRequest.schema.json";
+import MSRequestSchema from "../aolib-schemas/schemas/packets/MSRequest.schema.json";
 
-import PESchema from "../schemas/PE.schema.json";
+import PESchema from "../aolib-schemas/schemas/packets/PE.schema.json";
 
-import PNSchema from "../schemas/PN.schema.json";
+import PNSchema from "../aolib-schemas/schemas/packets/PN.schema.json";
 
-import PRSchema from "../schemas/PR.schema.json";
+import PRSchema from "../aolib-schemas/schemas/packets/PR.schema.json";
 
-import PUSchema from "../schemas/PU.schema.json";
+import PUSchema from "../aolib-schemas/schemas/packets/PU.schema.json";
 
-import PVSchema from "../schemas/PV.schema.json";
+import PVSchema from "../aolib-schemas/schemas/packets/PV.schema.json";
 
-import RCSchema from "../schemas/RC.schema.json";
+import RCSchema from "../aolib-schemas/schemas/packets/RC.schema.json";
 
-import RDSchema from "../schemas/RD.schema.json";
+import RDSchema from "../aolib-schemas/schemas/packets/RD.schema.json";
 
-import RMSchema from "../schemas/RM.schema.json";
+import RMSchema from "../aolib-schemas/schemas/packets/RM.schema.json";
 
-import RMCSchema from "../schemas/RMC.schema.json";
+import RMCSchema from "../aolib-schemas/schemas/packets/RMC.schema.json";
 
-import RTSchema from "../schemas/RT.schema.json";
+import RTSchema from "../aolib-schemas/schemas/packets/RT.schema.json";
 
-import SCSchema from "../schemas/SC.schema.json";
+import SCSchema from "../aolib-schemas/schemas/packets/SC.schema.json";
 
-import SISchema from "../schemas/SI.schema.json";
+import SISchema from "../aolib-schemas/schemas/packets/SI.schema.json";
 
-import SMSchema from "../schemas/SM.schema.json";
+import SMSchema from "../aolib-schemas/schemas/packets/SM.schema.json";
 
-import SPSchema from "../schemas/SP.schema.json";
+import SPSchema from "../aolib-schemas/schemas/packets/SP.schema.json";
 
-import TISchema from "../schemas/TI.schema.json";
+import TISchema from "../aolib-schemas/schemas/packets/TI.schema.json";
 
-import VS_AUDIOSchema from "../schemas/VS_AUDIO.schema.json";
+import VS_AUDIOSchema from "../aolib-schemas/schemas/packets/VS_AUDIO.schema.json";
 
-import VS_CAPSSchema from "../schemas/VS_CAPS.schema.json";
+import VS_CAPSSchema from "../aolib-schemas/schemas/packets/VS_CAPS.schema.json";
 
-import VS_FRAMESchema from "../schemas/VS_FRAME.schema.json";
+import VS_FRAMESchema from "../aolib-schemas/schemas/packets/VS_FRAME.schema.json";
 
-import VS_JOINBroadcastSchema from "../schemas/VS_JOINBroadcast.schema.json";
+import VS_JOINBroadcastSchema from "../aolib-schemas/schemas/packets/VS_JOINBroadcast.schema.json";
 
-import VS_JOINRequestSchema from "../schemas/VS_JOINRequest.schema.json";
+import VS_JOINRequestSchema from "../aolib-schemas/schemas/packets/VS_JOINRequest.schema.json";
 
-import VS_LEAVEBroadcastSchema from "../schemas/VS_LEAVEBroadcast.schema.json";
+import VS_LEAVEBroadcastSchema from "../aolib-schemas/schemas/packets/VS_LEAVEBroadcast.schema.json";
 
-import VS_LEAVERequestSchema from "../schemas/VS_LEAVERequest.schema.json";
+import VS_LEAVERequestSchema from "../aolib-schemas/schemas/packets/VS_LEAVERequest.schema.json";
 
-import VS_PEERSSchema from "../schemas/VS_PEERS.schema.json";
+import VS_PEERSSchema from "../aolib-schemas/schemas/packets/VS_PEERS.schema.json";
 
-import VS_SPEAKBroadcastSchema from "../schemas/VS_SPEAKBroadcast.schema.json";
+import VS_SPEAKBroadcastSchema from "../aolib-schemas/schemas/packets/VS_SPEAKBroadcast.schema.json";
 
-import VS_SPEAKRequestSchema from "../schemas/VS_SPEAKRequest.schema.json";
+import VS_SPEAKRequestSchema from "../aolib-schemas/schemas/packets/VS_SPEAKRequest.schema.json";
 
-import ZZSchema from "../schemas/ZZ.schema.json";
+import ZZSchema from "../aolib-schemas/schemas/packets/ZZ.schema.json";
 
-import askchaaSchema from "../schemas/askchaa.schema.json";
+import askchaaSchema from "../aolib-schemas/schemas/packets/askchaa.schema.json";
 
-import decryptorSchema from "../schemas/decryptor.schema.json";
+import decryptorSchema from "../aolib-schemas/schemas/packets/decryptor.schema.json";
 
 
-export { default as AESchema } from "../schemas/AE.schema.json";
+export { default as AESchema } from "../aolib-schemas/schemas/packets/AE.schema.json";
 
-export { default as AMSchema } from "../schemas/AM.schema.json";
+export { default as AMSchema } from "../aolib-schemas/schemas/packets/AM.schema.json";
 
-export { default as ANSchema } from "../schemas/AN.schema.json";
+export { default as ANSchema } from "../aolib-schemas/schemas/packets/AN.schema.json";
 
-export { default as ARUPSchema } from "../schemas/ARUP.schema.json";
+export { default as ARUPSchema } from "../aolib-schemas/schemas/packets/ARUP.schema.json";
 
-export { default as ASSSchema } from "../schemas/ASS.schema.json";
+export { default as ASSSchema } from "../aolib-schemas/schemas/packets/ASS.schema.json";
 
-export { default as AUTHSchema } from "../schemas/AUTH.schema.json";
+export { default as AUTHSchema } from "../aolib-schemas/schemas/packets/AUTH.schema.json";
 
-export { default as BBSchema } from "../schemas/BB.schema.json";
+export { default as BBSchema } from "../aolib-schemas/schemas/packets/BB.schema.json";
 
-export { default as BDSchema } from "../schemas/BD.schema.json";
+export { default as BDSchema } from "../aolib-schemas/schemas/packets/BD.schema.json";
 
-export { default as BNSchema } from "../schemas/BN.schema.json";
+export { default as BNSchema } from "../aolib-schemas/schemas/packets/BN.schema.json";
 
-export { default as CCSchema } from "../schemas/CC.schema.json";
+export { default as CCSchema } from "../aolib-schemas/schemas/packets/CC.schema.json";
 
-export { default as CHSchema } from "../schemas/CH.schema.json";
+export { default as CHSchema } from "../aolib-schemas/schemas/packets/CH.schema.json";
 
-export { default as CHECKSchema } from "../schemas/CHECK.schema.json";
+export { default as CHECKSchema } from "../aolib-schemas/schemas/packets/CHECK.schema.json";
 
-export { default as CISchema } from "../schemas/CI.schema.json";
+export { default as CISchema } from "../aolib-schemas/schemas/packets/CI.schema.json";
 
-export { default as CTBroadcastSchema } from "../schemas/CTBroadcast.schema.json";
+export { default as CTBroadcastSchema } from "../aolib-schemas/schemas/packets/CTBroadcast.schema.json";
 
-export { default as CTRequestSchema } from "../schemas/CTRequest.schema.json";
+export { default as CTRequestSchema } from "../aolib-schemas/schemas/packets/CTRequest.schema.json";
 
-export { default as CharsCheckSchema } from "../schemas/CharsCheck.schema.json";
+export { default as CharsCheckSchema } from "../aolib-schemas/schemas/packets/CharsCheck.schema.json";
 
-export { default as DESchema } from "../schemas/DE.schema.json";
+export { default as DESchema } from "../aolib-schemas/schemas/packets/DE.schema.json";
 
-export { default as DONESchema } from "../schemas/DONE.schema.json";
+export { default as DONESchema } from "../aolib-schemas/schemas/packets/DONE.schema.json";
 
-export { default as EESchema } from "../schemas/EE.schema.json";
+export { default as EESchema } from "../aolib-schemas/schemas/packets/EE.schema.json";
 
-export { default as EISchema } from "../schemas/EI.schema.json";
+export { default as EISchema } from "../aolib-schemas/schemas/packets/EI.schema.json";
 
-export { default as EMSchema } from "../schemas/EM.schema.json";
+export { default as EMSchema } from "../aolib-schemas/schemas/packets/EM.schema.json";
 
-export { default as FASchema } from "../schemas/FA.schema.json";
+export { default as FASchema } from "../aolib-schemas/schemas/packets/FA.schema.json";
 
-export { default as FLSchema } from "../schemas/FL.schema.json";
+export { default as FLSchema } from "../aolib-schemas/schemas/packets/FL.schema.json";
 
-export { default as FMSchema } from "../schemas/FM.schema.json";
+export { default as FMSchema } from "../aolib-schemas/schemas/packets/FM.schema.json";
 
-export { default as HISchema } from "../schemas/HI.schema.json";
+export { default as HISchema } from "../aolib-schemas/schemas/packets/HI.schema.json";
 
-export { default as HPSchema } from "../schemas/HP.schema.json";
+export { default as HPSchema } from "../aolib-schemas/schemas/packets/HP.schema.json";
 
-export { default as IDClientSchema } from "../schemas/IDClient.schema.json";
+export { default as IDClientSchema } from "../aolib-schemas/schemas/packets/IDClient.schema.json";
 
-export { default as IDServerSchema } from "../schemas/IDServer.schema.json";
+export { default as IDServerSchema } from "../aolib-schemas/schemas/packets/IDServer.schema.json";
 
-export { default as JDSchema } from "../schemas/JD.schema.json";
+export { default as JDSchema } from "../aolib-schemas/schemas/packets/JD.schema.json";
 
-export { default as KBSchema } from "../schemas/KB.schema.json";
+export { default as KBSchema } from "../aolib-schemas/schemas/packets/KB.schema.json";
 
-export { default as KKSchema } from "../schemas/KK.schema.json";
+export { default as KKSchema } from "../aolib-schemas/schemas/packets/KK.schema.json";
 
-export { default as LESchema } from "../schemas/LE.schema.json";
+export { default as LESchema } from "../aolib-schemas/schemas/packets/LE.schema.json";
 
-export { default as MASchema } from "../schemas/MA.schema.json";
+export { default as MASchema } from "../aolib-schemas/schemas/packets/MA.schema.json";
 
-export { default as MCBroadcastSchema } from "../schemas/MCBroadcast.schema.json";
+export { default as MCBroadcastSchema } from "../aolib-schemas/schemas/packets/MCBroadcast.schema.json";
 
-export { default as MCRequestSchema } from "../schemas/MCRequest.schema.json";
+export { default as MCRequestSchema } from "../aolib-schemas/schemas/packets/MCRequest.schema.json";
 
-export { default as MSBroadcastSchema } from "../schemas/MSBroadcast.schema.json";
+export { default as MSBroadcastSchema } from "../aolib-schemas/schemas/packets/MSBroadcast.schema.json";
 
-export { default as MSRequestSchema } from "../schemas/MSRequest.schema.json";
+export { default as MSRequestSchema } from "../aolib-schemas/schemas/packets/MSRequest.schema.json";
 
-export { default as PESchema } from "../schemas/PE.schema.json";
+export { default as PESchema } from "../aolib-schemas/schemas/packets/PE.schema.json";
 
-export { default as PNSchema } from "../schemas/PN.schema.json";
+export { default as PNSchema } from "../aolib-schemas/schemas/packets/PN.schema.json";
 
-export { default as PRSchema } from "../schemas/PR.schema.json";
+export { default as PRSchema } from "../aolib-schemas/schemas/packets/PR.schema.json";
 
-export { default as PUSchema } from "../schemas/PU.schema.json";
+export { default as PUSchema } from "../aolib-schemas/schemas/packets/PU.schema.json";
 
-export { default as PVSchema } from "../schemas/PV.schema.json";
+export { default as PVSchema } from "../aolib-schemas/schemas/packets/PV.schema.json";
 
-export { default as RCSchema } from "../schemas/RC.schema.json";
+export { default as RCSchema } from "../aolib-schemas/schemas/packets/RC.schema.json";
 
-export { default as RDSchema } from "../schemas/RD.schema.json";
+export { default as RDSchema } from "../aolib-schemas/schemas/packets/RD.schema.json";
 
-export { default as RMSchema } from "../schemas/RM.schema.json";
+export { default as RMSchema } from "../aolib-schemas/schemas/packets/RM.schema.json";
 
-export { default as RMCSchema } from "../schemas/RMC.schema.json";
+export { default as RMCSchema } from "../aolib-schemas/schemas/packets/RMC.schema.json";
 
-export { default as RTSchema } from "../schemas/RT.schema.json";
+export { default as RTSchema } from "../aolib-schemas/schemas/packets/RT.schema.json";
 
-export { default as SCSchema } from "../schemas/SC.schema.json";
+export { default as SCSchema } from "../aolib-schemas/schemas/packets/SC.schema.json";
 
-export { default as SISchema } from "../schemas/SI.schema.json";
+export { default as SISchema } from "../aolib-schemas/schemas/packets/SI.schema.json";
 
-export { default as SMSchema } from "../schemas/SM.schema.json";
+export { default as SMSchema } from "../aolib-schemas/schemas/packets/SM.schema.json";
 
-export { default as SPSchema } from "../schemas/SP.schema.json";
+export { default as SPSchema } from "../aolib-schemas/schemas/packets/SP.schema.json";
 
-export { default as TISchema } from "../schemas/TI.schema.json";
+export { default as TISchema } from "../aolib-schemas/schemas/packets/TI.schema.json";
 
-export { default as VS_AUDIOSchema } from "../schemas/VS_AUDIO.schema.json";
+export { default as VS_AUDIOSchema } from "../aolib-schemas/schemas/packets/VS_AUDIO.schema.json";
 
-export { default as VS_CAPSSchema } from "../schemas/VS_CAPS.schema.json";
+export { default as VS_CAPSSchema } from "../aolib-schemas/schemas/packets/VS_CAPS.schema.json";
 
-export { default as VS_FRAMESchema } from "../schemas/VS_FRAME.schema.json";
+export { default as VS_FRAMESchema } from "../aolib-schemas/schemas/packets/VS_FRAME.schema.json";
 
-export { default as VS_JOINBroadcastSchema } from "../schemas/VS_JOINBroadcast.schema.json";
+export { default as VS_JOINBroadcastSchema } from "../aolib-schemas/schemas/packets/VS_JOINBroadcast.schema.json";
 
-export { default as VS_JOINRequestSchema } from "../schemas/VS_JOINRequest.schema.json";
+export { default as VS_JOINRequestSchema } from "../aolib-schemas/schemas/packets/VS_JOINRequest.schema.json";
 
-export { default as VS_LEAVEBroadcastSchema } from "../schemas/VS_LEAVEBroadcast.schema.json";
+export { default as VS_LEAVEBroadcastSchema } from "../aolib-schemas/schemas/packets/VS_LEAVEBroadcast.schema.json";
 
-export { default as VS_LEAVERequestSchema } from "../schemas/VS_LEAVERequest.schema.json";
+export { default as VS_LEAVERequestSchema } from "../aolib-schemas/schemas/packets/VS_LEAVERequest.schema.json";
 
-export { default as VS_PEERSSchema } from "../schemas/VS_PEERS.schema.json";
+export { default as VS_PEERSSchema } from "../aolib-schemas/schemas/packets/VS_PEERS.schema.json";
 
-export { default as VS_SPEAKBroadcastSchema } from "../schemas/VS_SPEAKBroadcast.schema.json";
+export { default as VS_SPEAKBroadcastSchema } from "../aolib-schemas/schemas/packets/VS_SPEAKBroadcast.schema.json";
 
-export { default as VS_SPEAKRequestSchema } from "../schemas/VS_SPEAKRequest.schema.json";
+export { default as VS_SPEAKRequestSchema } from "../aolib-schemas/schemas/packets/VS_SPEAKRequest.schema.json";
 
-export { default as ZZSchema } from "../schemas/ZZ.schema.json";
+export { default as ZZSchema } from "../aolib-schemas/schemas/packets/ZZ.schema.json";
 
-export { default as askchaaSchema } from "../schemas/askchaa.schema.json";
+export { default as askchaaSchema } from "../aolib-schemas/schemas/packets/askchaa.schema.json";
 
-export { default as decryptorSchema } from "../schemas/decryptor.schema.json";
+export { default as decryptorSchema } from "../aolib-schemas/schemas/packets/decryptor.schema.json";
 
 
 export const enumSchemas = [AreaUpdateTypeEnumSchema, DeskModifierEnumSchema, EmoteModifierEnumSchema, FlipEnumSchema, ShoutModifierEnumSchema, SideEnumSchema, TextColorEnumSchema];

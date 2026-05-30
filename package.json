@@ -16,7 +16,7 @@
   "files": [
     "src/**/*.ts",
     "generated/**/*.ts",
-    "schemas/**/*.json",
+    "aolib-schemas/**/*.json",
     "README.md",
     "LICENSE"
   ],

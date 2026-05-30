@@ -1,5 +1,5 @@
 {
-  "$comment": "Wire registry for the AO packet schemas. Each schema file in schemas/<Name>.schema.json defines one packet; this manifest says which direction(s) it travels and which header it lives under. For asymmetric bidirectional packets the two ends are separate schemas (MCRequest + MCBroadcast) registered under the same header.",
+  "$comment": "Wire registry for the AO packet schemas. Each schema file in aolib-schemas/schemas/packets/<Name>.schema.json defines one packet; this manifest says which direction(s) it travels and which header it lives under. For asymmetric bidirectional packets the two ends are separate schemas (MCRequest + MCBroadcast) registered under the same header.",
   "c2s": [
     "HI",
     { "header": "ID", "schema": "IDClient" },
