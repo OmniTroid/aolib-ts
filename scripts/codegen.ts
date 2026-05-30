@@ -1,9 +1,9 @@
 /**
- * Codegen: reads aolib-schemas/ and emits generated/packets.ts + generated/enums.ts.
+ * Codegen: reads aolib-meta/ and emits generated/packets.ts + generated/enums.ts.
  *
  * Inputs:
- *   - aolib-schemas/schemas/packets/<Name>.schema.json — one per packet
- *   - aolib-schemas/schemas/enums/<Name>.enum.json     — one per named enum,
+ *   - aolib-meta/schemas/packets/<Name>.schema.json — one per packet
+ *   - aolib-meta/schemas/enums/<Name>.enum.json     — one per named enum,
  *     referenced from packet schemas via `{ "$ref": "<Name>.enum.json" }`.
  *     Each carries an
  *     `x-enum-names` array parallel to the `enum` values so codegen
@@ -34,7 +34,7 @@ import { fileURLToPath } from "node:url";
 
 const SCRIPTS_DIR = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(SCRIPTS_DIR, "..");
-const SCHEMAS_ROOT = join(ROOT, "aolib-schemas/schemas");
+const SCHEMAS_ROOT = join(ROOT, "aolib-meta/schemas");
 const PACKETS_DIR = join(SCHEMAS_ROOT, "packets");
 const ENUMS_DIR = join(SCHEMAS_ROOT, "enums");
 const REGISTRY_FILE = join(SCRIPTS_DIR, "registry.json");
@@ -269,7 +269,7 @@ function emitClass(name: string, schema: JsonSchema, ctx: RenderCtx): string {
 
 function emitEnumsFile(enums: Map<string, EnumDef>): string {
   const parts: string[] = [
-    "// AUTO-GENERATED from aolib-schemas/schemas/enums/*. Do not edit; run `bun run codegen`.\n",
+    "// AUTO-GENERATED from aolib-meta/schemas/enums/*. Do not edit; run `bun run codegen`.\n",
   ];
   // Sort by name for deterministic output.
   const sorted = [...enums.values()].sort((a, b) => a.name.localeCompare(b.name));
@@ -397,7 +397,7 @@ function main(): void {
     : `import { ${[...ctx.enumImports].sort().join(", ")} } from "./enums";\n\n`;
 
   const parts: string[] = [
-    "// AUTO-GENERATED from aolib-schemas/schemas/. Do not edit; run `bun run codegen`.\n",
+    "// AUTO-GENERATED from aolib-meta/schemas/. Do not edit; run `bun run codegen`.\n",
     "/* eslint-disable */\n",
     enumImports,
   ];
@@ -408,17 +408,17 @@ function main(): void {
     .map((e) => e.name)
     .sort();
   for (const name of enumNames) {
-    parts.push(`import ${name}EnumSchema from "../aolib-schemas/schemas/enums/${name}.enum.json";\n`);
+    parts.push(`import ${name}EnumSchema from "../aolib-meta/schemas/enums/${name}.enum.json";\n`);
   }
   parts.push("");
 
   for (const name of packets) {
-    parts.push(`import ${name}Schema from "../aolib-schemas/schemas/packets/${name}.schema.json";\n`);
+    parts.push(`import ${name}Schema from "../aolib-meta/schemas/packets/${name}.schema.json";\n`);
   }
   parts.push("");
 
   for (const name of packets) {
-    parts.push(`export { default as ${name}Schema } from "../aolib-schemas/schemas/packets/${name}.schema.json";\n`);
+    parts.push(`export { default as ${name}Schema } from "../aolib-meta/schemas/packets/${name}.schema.json";\n`);
   }
   parts.push("");
 

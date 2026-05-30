@@ -3,7 +3,7 @@
  * value space includes things JSON Schema enums don't express well.
  *
  * The actual named enums (Side, DeskModifier, etc.) are codegenned
- * from aolib-schemas/schemas/enums/*.enum.json into `../generated/enums`. Re-exported
+ * from aolib-meta/schemas/enums/*.enum.json into `../generated/enums`. Re-exported
  * here so callers have a single import.
  */
 
