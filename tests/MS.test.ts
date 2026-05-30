@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
-import { encode } from "../encode";
-import { decode } from "../decode";
-import { server, client } from "../session";
+import { encode } from "../src/encode";
+import { decode } from "../src/decode";
+import { server, client } from "../src/session";
 import {
   MSRequest,
   MSBroadcast,
@@ -13,8 +13,8 @@ import {
   TextColor,
   isFullView,
   type Offset,
-} from "../packets/MS";
-import type { In, Out } from "../types";
+} from "../src/packets/MS";
+import type { In, Out } from "../src/types";
 
 // ---------------------------------------------------------------------
 // Enums round-trip on every wire format.

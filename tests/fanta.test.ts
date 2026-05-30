@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
-import { toFantaArgs, fromFantaArgs } from "../fanta";
-import { str, num, bool, opt, lit, nested, array, custom } from "../fields";
-import type { Fields } from "../schema";
+import { toFantaArgs, fromFantaArgs } from "../src/fanta";
+import { str, num, bool, opt, lit, nested, array, custom } from "../src/fields";
+import type { Fields } from "../src/schema";
 
 // ---------------------------------------------------------------------
 // toFantaArgs — typed packet → ordered args list

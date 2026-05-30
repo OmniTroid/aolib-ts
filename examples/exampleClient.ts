@@ -9,7 +9,7 @@
  * typechecks.
  */
 
-import { aolib } from "./index";
+import { aolib } from "../src/index";
 
 // ---------------------------------------------------------------------
 // Application state and stub helpers — what real client code would

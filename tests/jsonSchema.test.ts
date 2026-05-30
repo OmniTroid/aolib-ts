@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
-import { toJsonSchema } from "../jsonSchema";
-import { packet } from "../schema";
-import { str, num, bool, opt, lit, nested, array, custom } from "../fields";
+import { toJsonSchema } from "../src/jsonSchema";
+import { packet } from "../src/schema";
+import { str, num, bool, opt, lit, nested, array, custom } from "../src/fields";
 
 describe("toJsonSchema", () => {
   it("emits draft-07 envelope with title and $header const", () => {

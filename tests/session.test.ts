@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { server, client, type SessionConfig } from "../session";
+import { server, client, type SessionConfig } from "../src/session";
 
 // ---------------------------------------------------------------------
 // Tiny config-builder. Each test wires up its own outbound buffer + hooks.

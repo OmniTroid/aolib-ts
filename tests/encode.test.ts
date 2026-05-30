@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
-import { encode } from "../encode";
-import { packet } from "../schema";
-import { str, num, bool, opt, lit, nested, array } from "../fields";
+import { encode } from "../src/encode";
+import { packet } from "../src/schema";
+import { str, num, bool, opt, lit, nested, array } from "../src/fields";
 
 // ---------------------------------------------------------------------
 // Worked schemas — small enough to read, exercise every feature.

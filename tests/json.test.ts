@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
-import { fromJson, toJson } from "../json";
-import { str, num, bool, opt, lit, nested, array, custom } from "../fields";
+import { fromJson, toJson } from "../src/json";
+import { str, num, bool, opt, lit, nested, array, custom } from "../src/fields";
 
 // ---------------------------------------------------------------------
 // fromJson — strict per-leaf validation

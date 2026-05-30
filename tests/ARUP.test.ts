@@ -1,9 +1,9 @@
 import { describe, it, expect } from "bun:test";
-import { encode } from "../encode";
-import { decode } from "../decode";
-import { server } from "../session";
-import { ARUP, AreaUpdateType, type AreaUpdateData } from "../packets/ARUP";
-import type { Out } from "../types";
+import { encode } from "../src/encode";
+import { decode } from "../src/decode";
+import { server } from "../src/session";
+import { ARUP, AreaUpdateType, type AreaUpdateData } from "../src/packets/ARUP";
+import type { Out } from "../src/types";
 
 // ---------------------------------------------------------------------
 // Discriminator: update_type drives the payload type.

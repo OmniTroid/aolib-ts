@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
-import { packet } from "../schema";
-import { str, num, opt, lit } from "../fields";
+import { packet } from "../src/schema";
+import { str, num, opt, lit } from "../src/fields";
 
 describe("packet()", () => {
   it("sets $header and fields", () => {

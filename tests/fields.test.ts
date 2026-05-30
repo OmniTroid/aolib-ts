@@ -8,7 +8,7 @@ import {
   nested,
   array,
   custom,
-} from "../fields";
+} from "../src/fields";
 
 // ---------------------------------------------------------------------
 // str()

@@ -10,7 +10,7 @@
  * land in `packets/`, more `.on.X` / `.send.X` calls become valid.
  */
 
-import { aolib, type ClientSession } from "./index";
+import { aolib, type ClientSession } from "../src/index";
 
 // ---------------------------------------------------------------------
 // Minimal inline declarations for the Node `ws` package's

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
-import { cast } from "../cast";
-import { str, num, opt, lit, nested, array } from "../fields";
-import type { Fields } from "../schema";
+import { cast } from "../src/cast";
+import { str, num, opt, lit, nested, array } from "../src/fields";
+import type { Fields } from "../src/schema";
 
 describe("cast: required vs missing", () => {
   it("required field present passes through", () => {

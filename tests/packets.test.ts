@@ -13,10 +13,10 @@
  */
 
 import { describe, it, expect } from "bun:test";
-import { encode } from "../encode";
-import { decode } from "../decode";
-import { c2sSchemas, s2cSchemas } from "../packets";
-import { server, client } from "../session";
+import { encode } from "../src/encode";
+import { decode } from "../src/decode";
+import { c2sSchemas, s2cSchemas } from "../src/packets";
+import { server, client } from "../src/session";
 
 // ---------------------------------------------------------------------
 // Registry snapshot — catches accidental removals on PR diffs.
