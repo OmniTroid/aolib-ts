@@ -10,6 +10,11 @@
     "player_id": {
       "type": "number"
     },
+    "_cid": {
+      "type": "string",
+      "const": "CID",
+      "default": "CID"
+    },
     "char_id": {
       "type": "number"
     }
@@ -17,6 +22,7 @@
   "required": [
     "$header",
     "player_id",
+    "_cid",
     "char_id"
   ],
   "additionalProperties": false

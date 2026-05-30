@@ -2,8 +2,10 @@ import { describe, it, expect } from "bun:test";
 import { encode } from "../src/encode";
 import { decode } from "../src/decode";
 import { server } from "../src/session";
-import { ARUP, AreaUpdateType, type AreaUpdateData } from "../src/packets/ARUP";
-import type { Out } from "../src/types";
+import { ARUP as ARUPClass, ARUPSchema as ARUP } from "../generated/packets";
+import { AreaUpdateType, type AreaUpdateData } from "../src/enums";
+
+type ARUPType = ARUPClass;
 
 // ---------------------------------------------------------------------
 // Discriminator: update_type drives the payload type.
@@ -17,7 +19,7 @@ describe("ARUP: update_type discriminates payload", () => {
       "fanta",
     );
     expect(wire).toBe("ARUP#0#3#7#0#%");
-    const decoded = decode(ARUP, wire) as Out<typeof ARUP>;
+    const decoded = decode(ARUP, wire) as unknown as ARUPType;
     expect(decoded.update_type).toBe(AreaUpdateType.PLAYER_COUNT);
     expect(decoded.update_data).toEqual([3, 7, 0]);
   });
@@ -32,7 +34,7 @@ describe("ARUP: update_type discriminates payload", () => {
       "fanta",
     );
     expect(wire).toBe("ARUP#1#normal#casing#battle#%");
-    const decoded = decode(ARUP, wire) as Out<typeof ARUP>;
+    const decoded = decode(ARUP, wire) as unknown as ARUPType;
     expect(decoded.update_type).toBe(AreaUpdateType.STATUS);
     expect(decoded.update_data).toEqual(["normal", "casing", "battle"]);
   });
@@ -85,7 +87,7 @@ describe("ARUP: chat-escape on string payloads", () => {
       { update_type: AreaUpdateType.CASE_MANAGER, update_data: names },
       "fanta",
     );
-    const decoded = decode(ARUP, wire) as Out<typeof ARUP>;
+    const decoded = decode(ARUP, wire) as unknown as ARUPType;
     expect(decoded.update_data).toEqual(names);
   });
 
@@ -125,23 +127,21 @@ describe("ARUP: edge cases", () => {
       "fanta",
     );
     expect(wire).toBe("ARUP#0#%");
-    const decoded = decode(ARUP, wire) as Out<typeof ARUP>;
+    const decoded = decode(ARUP, wire) as unknown as ARUPType;
     expect(decoded).toEqual({
       update_type: AreaUpdateType.PLAYER_COUNT,
       update_data: [],
     });
   });
 
-  it("unknown update_type falls back to PLAYER_COUNT", () => {
-    const decoded = decode(ARUP, "ARUP#9#1#2#3#%") as Out<typeof ARUP>;
-    expect(decoded.update_type).toBe(AreaUpdateType.PLAYER_COUNT);
-    expect(decoded.update_data).toEqual([1, 2, 3]);
+  it("unknown update_type fails strict validation", () => {
+    expect(() => decode(ARUP, "ARUP#9#1#2#3#%")).toThrow(/update_type/);
   });
 
   it("non-numeric token in PLAYER_COUNT payload becomes 0", () => {
     // Player counts that fail to parse fall back to 0 rather than NaN
     // — handlers loop over them assuming finite numbers.
-    const decoded = decode(ARUP, "ARUP#0#3#oops#5#%") as Out<typeof ARUP>;
+    const decoded = decode(ARUP, "ARUP#0#3#oops#5#%") as unknown as ARUPType;
     expect(decoded.update_data).toEqual([3, 0, 5]);
   });
 });
@@ -201,7 +201,7 @@ describe("ARUP: JSON envelope", () => {
 describe("ARUP: session integration", () => {
   it("server.on.ARUP receives the typed packet", () => {
     const s = server({ send: () => {} });
-    let received: Out<typeof ARUP> | undefined;
+    let received: ARUPType | undefined;
     s.on.ARUP((p) => {
       received = p;
     });

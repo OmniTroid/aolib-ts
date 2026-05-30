@@ -1,39 +1,49 @@
 import { describe, it, expect } from "bun:test";
 import { encode } from "../src/encode";
-import { packet } from "../src/schema";
-import { str, num, bool, opt, lit, nested, array } from "../src/fields";
+import { packetSchema } from "./util";
 
 // ---------------------------------------------------------------------
 // Worked schemas — small enough to read, exercise every feature.
 // ---------------------------------------------------------------------
 
-const MC = packet("MC", {
-  name: str(),
-  char_id: num(),
-  showname: opt(str(), ""),
-  effects: opt(num(), 0),
+const MC = packetSchema("MC", {
+  name: { type: "string" },
+  char_id: { type: "number" },
+  showname: { type: "string", default: "" },
+  effects: { type: "number", default: 0 },
 });
 
-const CC = packet("CC", {
-  _0: lit(0),
-  char_id: num(),
-  _pw: lit(""),
+const CC = packetSchema("CC", {
+  _0: { type: "number", const: 0, default: 0 },
+  char_id: { type: "number" },
+  _pw: { type: "string", const: "", default: "" },
 });
 
-const PV = packet("PV", {
-  player_id: num(),
-  _cid: lit("CID"),
-  char_id: num(),
+const PV = packetSchema("PV", {
+  player_id: { type: "number" },
+  _cid: { type: "string", const: "CID", default: "CID" },
+  char_id: { type: "number" },
 });
 
-const DONE = packet("DONE", {});
+const DONE = packetSchema("DONE");
 
-const SM = packet("SM", {
-  music_list: array(str()),
+const SM = packetSchema("SM", {
+  music_list: { type: "array", items: { type: "string" } },
 });
 
-const VS_PEERS = packet("VS_PEERS", {
-  peers: array(nested({ uid: num(), name: str() })),
+const VS_PEERS = packetSchema("VS_PEERS", {
+  peers: {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        uid: { type: "number" },
+        name: { type: "string" },
+      },
+      required: ["uid", "name"],
+      additionalProperties: false,
+    },
+  },
 });
 
 // ---------------------------------------------------------------------
@@ -47,12 +57,12 @@ describe("encode: JSON mode", () => {
     );
   });
 
-  it("literals are stripped from the envelope (positional padding is wire-only)", () => {
+  it("const-typed schema properties appear in the envelope (Ajv fills from default)", () => {
     expect(encode(CC, { char_id: 5 }, "json")).toBe(
-      '{"$header":"CC","char_id":5}',
+      '{"$header":"CC","char_id":5,"_0":0,"_pw":""}',
     );
     expect(encode(PV, { player_id: 3, char_id: 7 }, "json")).toBe(
-      '{"$header":"PV","player_id":3,"char_id":7}',
+      '{"$header":"PV","player_id":3,"char_id":7,"_cid":"CID"}',
     );
   });
 
@@ -69,8 +79,13 @@ describe("encode: JSON mode", () => {
   });
 
   it("nested fields become real nested objects in JSON", () => {
-    const FOO = packet("FOO", {
-      offset: nested({ x: num(), y: num() }),
+    const FOO = packetSchema("FOO", {
+      offset: {
+        type: "object",
+        properties: { x: { type: "number" }, y: { type: "number" } },
+        required: ["x", "y"],
+        additionalProperties: false,
+      },
     });
     expect(encode(FOO, { offset: { x: 5, y: 3 } }, "json")).toBe(
       '{"$header":"FOO","offset":{"x":5,"y":3}}',
@@ -160,8 +175,13 @@ describe("encode: fanta mode", () => {
   });
 
   it("nested field packs into one positional slot", () => {
-    const FOO = packet("FOO", {
-      offset: nested({ x: num(), y: num() }),
+    const FOO = packetSchema("FOO", {
+      offset: {
+        type: "object",
+        properties: { x: { type: "number" }, y: { type: "number" } },
+        required: ["x", "y"],
+        additionalProperties: false,
+      },
     });
     expect(encode(FOO, { offset: { x: 5, y: 3 } }, "fanta")).toBe(
       "FOO#5&3#%",
@@ -175,52 +195,9 @@ describe("encode: fanta mode", () => {
   });
 
   it("boolean values become 1 / 0 on the wire", () => {
-    const ALERT = packet("ALERT", { silent: bool() });
+    const ALERT = packetSchema("ALERT", { silent: { type: "boolean" } });
     expect(encode(ALERT, { silent: true }, "fanta")).toBe("ALERT#1#%");
     expect(encode(ALERT, { silent: false }, "fanta")).toBe("ALERT#0#%");
   });
 });
 
-// ---------------------------------------------------------------------
-// Schema-level override
-// ---------------------------------------------------------------------
-
-describe("encode: schema-level toArgs override (fanta path)", () => {
-  it("dispatches to override when defined, bypassing the default walker", () => {
-    const WEIRD = packet(
-      "EI",
-      {
-        id: num(),
-        name: str(),
-        description: str(),
-      },
-      {
-        toArgs: (p) => {
-          const x = p as { id: number; name: string; description: string };
-          return [String(x.id), `${x.name}&${x.description}`];
-        },
-      },
-    );
-    expect(
-      encode(WEIRD, { id: 1, name: "Pistol", description: "fires" }, "fanta"),
-    ).toBe("EI#1#Pistol&fires#%");
-  });
-
-  it("override is not used in JSON mode (JSON is keyed)", () => {
-    const WEIRD = packet(
-      "EI",
-      {
-        id: num(),
-        name: str(),
-      },
-      {
-        toArgs: () => {
-          throw new Error("toArgs should not be called in JSON mode");
-        },
-      },
-    );
-    expect(encode(WEIRD, { id: 1, name: "Pistol" }, "json")).toBe(
-      '{"$header":"EI","id":1,"name":"Pistol"}',
-    );
-  });
-});

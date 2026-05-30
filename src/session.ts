@@ -32,9 +32,19 @@
 
 import { encode, type WireMode } from "./encode";
 import { decode, readHeader } from "./decode";
-import { c2sSchemas, s2cSchemas, type C2SSchemas, type S2CSchemas } from "./packets";
-import type { In, Out } from "./types";
-import type { Schema } from "./schema";
+import {
+  c2sSchemas,
+  s2cSchemas,
+  c2sClasses,
+  s2cClasses,
+  type C2SInputs,
+  type S2CInputs,
+  type C2SOutputs,
+  type S2COutputs,
+} from "../generated/packets";
+import type { JsonSchema } from "./types";
+
+type ClassCtor = { prototype: object };
 
 // ---------------------------------------------------------------------
 // Public types
@@ -49,24 +59,17 @@ export interface SessionConfig {
   onHandlerError?(header: string, err: Error, packet: unknown): void;
 }
 
-type AnySchema = Schema<any>;
-
-type Sender<S extends AnySchema> = (packet: In<S>) => void;
-type HandlerRegistrar<S extends AnySchema> = (
-  handler: (packet: Out<S>) => void,
-) => void;
-
-type SendMap<M extends Record<string, AnySchema>> = {
-  [K in keyof M]: Sender<M[K]>;
+type SendMap<Inputs> = {
+  [K in keyof Inputs]: (packet: Inputs[K]) => void;
 };
-type OnMap<M extends Record<string, AnySchema>> = {
-  [K in keyof M]: HandlerRegistrar<M[K]>;
+type OnMap<Outputs> = {
+  [K in keyof Outputs]: (handler: (packet: Outputs[K]) => void) => void;
 };
 
 /** Returned from `server(config)`. Owns the C2S send side, S2C on side. */
 export interface ServerSession {
-  send: SendMap<C2SSchemas>;
-  on: OnMap<S2CSchemas>;
+  send: SendMap<C2SInputs>;
+  on: OnMap<S2COutputs>;
   receive(wire: string): void;
   close(): void;
   /**
@@ -78,8 +81,8 @@ export interface ServerSession {
 
 /** Returned from `client(config)`. Owns the S2C send side, C2S on side. */
 export interface ClientSession {
-  send: SendMap<S2CSchemas>;
-  on: OnMap<C2SSchemas>;
+  send: SendMap<S2CInputs>;
+  on: OnMap<C2SOutputs>;
   receive(wire: string): void;
   close(): void;
   /**
@@ -96,6 +99,9 @@ export interface ClientSession {
 
 type Role = "client" | "server";
 
+type SchemaMap = Record<string, JsonSchema>;
+type ClassMap = Record<string, ClassCtor>;
+
 function makeSession(role: Role, config: SessionConfig): ServerSession & ClientSession {
   // role "server" → this represents the remote server → from us-as-client.
   //   outbound: C2S (we are the client speaking to the server)
@@ -103,8 +109,9 @@ function makeSession(role: Role, config: SessionConfig): ServerSession & ClientS
   // role "client" → this represents a remote client → from us-as-server.
   //   outbound: S2C
   //   inbound: C2S
-  const outboundSchemas = role === "server" ? c2sSchemas : s2cSchemas;
-  const inboundSchemas = role === "server" ? s2cSchemas : c2sSchemas;
+  const outboundSchemas = (role === "server" ? c2sSchemas : s2cSchemas) as SchemaMap;
+  const inboundSchemas = (role === "server" ? s2cSchemas : c2sSchemas) as SchemaMap;
+  const inboundClasses = (role === "server" ? s2cClasses : c2sClasses) as unknown as ClassMap;
   const oppositeOutbound = role === "server" ? s2cSchemas : c2sSchemas;
   const oppositeInbound = role === "server" ? c2sSchemas : s2cSchemas;
 
@@ -116,7 +123,7 @@ function makeSession(role: Role, config: SessionConfig): ServerSession & ClientS
     get: (_t, prop) => {
       if (typeof prop !== "string") return undefined;
       const header = prop;
-      const schema = (outboundSchemas as Record<string, AnySchema>)[header];
+      const schema = outboundSchemas[header];
       if (!schema) {
         if (header in oppositeOutbound) {
           throw wrongDirectionSendError(role, header);
@@ -162,7 +169,7 @@ function makeSession(role: Role, config: SessionConfig): ServerSession & ClientS
       return;
     }
 
-    const schema = (inboundSchemas as Record<string, AnySchema>)[header];
+    const schema = inboundSchemas[header];
     if (!schema) {
       if (!callHook(config.onUnknownHeader, header, wire)) {
         defaultUnknownHeader(header, wire);
@@ -170,9 +177,15 @@ function makeSession(role: Role, config: SessionConfig): ServerSession & ClientS
       return;
     }
 
-    let packet: Record<string, unknown>;
+    let packet: object;
     try {
-      packet = decode(schema, wire);
+      const parsed = decode(schema, wire);
+      const ctor = inboundClasses[header];
+      // Rehydrate as a class instance so handlers can rely on
+      // `instanceof` and the typed shape matches the OutMap.
+      packet = ctor
+        ? Object.assign(Object.create(ctor.prototype) as object, parsed)
+        : parsed;
     } catch (err) {
       if (!callHook(config.onDecodeError, header, err as Error, wire)) {
         defaultDecodeError(header, err as Error, wire);
@@ -210,8 +223,8 @@ function makeSession(role: Role, config: SessionConfig): ServerSession & ClientS
   }
 
   return {
-    send: send as unknown as SendMap<C2SSchemas> & SendMap<S2CSchemas>,
-    on: on as unknown as OnMap<S2CSchemas> & OnMap<C2SSchemas>,
+    send: send as unknown as SendMap<C2SInputs> & SendMap<S2CInputs>,
+    on: on as unknown as OnMap<S2COutputs> & OnMap<C2SOutputs>,
     receive,
     close,
     setJsonMode,

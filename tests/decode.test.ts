@@ -1,40 +1,50 @@
 import { describe, it, expect } from "bun:test";
 import { decode } from "../src/decode";
 import { encode } from "../src/encode";
-import { packet } from "../src/schema";
-import { str, num, opt, lit, nested, array } from "../src/fields";
+import { packetSchema } from "./util";
 
 // ---------------------------------------------------------------------
 // Worked schemas — same as encode.test.ts so round-trip tests work.
 // ---------------------------------------------------------------------
 
-const MC = packet("MC", {
-  name: str(),
-  char_id: num(),
-  showname: opt(str(), ""),
-  effects: opt(num(), 0),
+const MC = packetSchema("MC", {
+  name: { type: "string" },
+  char_id: { type: "number" },
+  showname: { type: "string", default: "" },
+  effects: { type: "number", default: 0 },
 });
 
-const CC = packet("CC", {
-  _0: lit(0),
-  char_id: num(),
-  _pw: lit(""),
+const CC = packetSchema("CC", {
+  _0: { type: "number", const: 0, default: 0 },
+  char_id: { type: "number" },
+  _pw: { type: "string", const: "", default: "" },
 });
 
-const PV = packet("PV", {
-  player_id: num(),
-  _cid: lit("CID"),
-  char_id: num(),
+const PV = packetSchema("PV", {
+  player_id: { type: "number" },
+  _cid: { type: "string", const: "CID", default: "CID" },
+  char_id: { type: "number" },
 });
 
-const DONE = packet("DONE", {});
+const DONE = packetSchema("DONE");
 
-const SM = packet("SM", {
-  music_list: array(str()),
+const SM = packetSchema("SM", {
+  music_list: { type: "array", items: { type: "string" } },
 });
 
-const VS_PEERS = packet("VS_PEERS", {
-  peers: array(nested({ uid: num(), name: str() })),
+const VS_PEERS = packetSchema("VS_PEERS", {
+  peers: {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        uid: { type: "number" },
+        name: { type: "string" },
+      },
+      required: ["uid", "name"],
+      additionalProperties: false,
+    },
+  },
 });
 
 // ---------------------------------------------------------------------
@@ -91,9 +101,14 @@ describe("decode: JSON mode", () => {
     expect("_pw" in out).toBe(false);
   });
 
-  it("nested objects round through fromJson + cast", () => {
-    const FOO = packet("FOO", {
-      offset: nested({ x: num(), y: num() }),
+  it("nested objects round-trip through JSON path", () => {
+    const FOO = packetSchema("FOO", {
+      offset: {
+        type: "object",
+        properties: { x: { type: "number" }, y: { type: "number" } },
+        required: ["x", "y"],
+        additionalProperties: false,
+      },
     });
     expect(decode(FOO, '{"$header":"FOO","offset":{"x":5,"y":3}}')).toEqual({
       offset: { x: 5, y: 3 },
@@ -236,54 +251,6 @@ describe("decode: fanta mode", () => {
     expect(() => decode(MC, "MC#x#abc##0#%")).toThrow(
       /Invalid number for field 'char_id'/,
     );
-  });
-});
-
-// ---------------------------------------------------------------------
-// Schema-level override
-// ---------------------------------------------------------------------
-
-describe("decode: schema-level fromArgs override (fanta path)", () => {
-  it("dispatches to override when defined", () => {
-    const WEIRD = packet(
-      "EI",
-      {
-        id: num(),
-        name: str(),
-        description: str(),
-      },
-      {
-        fromArgs: (args) => {
-          const parts = (args[1] ?? "").split("&");
-          return {
-            id: Number(args[0]),
-            name: parts[0],
-            description: parts[1],
-          };
-        },
-      },
-    );
-    expect(decode(WEIRD, "EI#1#Pistol&fires#%")).toEqual({
-      id: 1,
-      name: "Pistol",
-      description: "fires",
-    });
-  });
-
-  it("override is not used in JSON mode", () => {
-    const WEIRD = packet(
-      "EI",
-      { id: num(), name: str() },
-      {
-        fromArgs: () => {
-          throw new Error("fromArgs should not be called in JSON mode");
-        },
-      },
-    );
-    expect(decode(WEIRD, '{"$header":"EI","id":1,"name":"Pistol"}')).toEqual({
-      id: 1,
-      name: "Pistol",
-    });
   });
 });
 

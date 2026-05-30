@@ -31,5 +31,6 @@
     "update_type",
     "update_data"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "x-fanta-codec": "ARUP"
 }

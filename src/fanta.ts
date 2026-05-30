@@ -1,45 +1,35 @@
 /**
- * Fanta wire-format walker.
+ * Fanta wire-format walker, driven by JSON Schema.
  *
- * Owns the args-list step: typed packet → ordered list of string tokens,
- * and back. The library handles framing (`HEADER#…#%`) and terminator
- * peeling in `./encode` and `./decode`.
+ * One positional slot per top-level property (skipping `$header` —
+ * the framing layer carries it). Per-property semantics come from
+ * the JSON Schema:
+ *
+ *   "string"          escape-fanta on encode, unescape+unicode on decode
+ *   "number"/"integer" String(n) on encode, Number(token) on decode
+ *   "boolean"         "1"/"0" on encode, token === "1" on decode
+ *   "object"          recurse, join sub-tokens with `&`; optional
+ *                     `x-fanta-escape: true` to legacy-escape the `&`
+ *                     separator (offset slot in MS)
+ *   "array"           greedy — consumes all remaining slots
+ *   const             emitted as the const value; on decode the slot
+ *                     is consumed but the schema-fixed value is used
+ *
+ * Custom packets register a codec via `x-fanta-codec` at the schema
+ * level (ARUP). The codec gets the raw args array and returns the
+ * partial packet (and vice versa).
  *
  * Validation, default-filling, and required-checking are Ajv's job
- * (via `./validate`); this walker only converts between the typed
+ * (see `./validate`). This walker only converts between the typed
  * value and its positional-token form.
- *
- * Per-field positional semantics:
- *
- *   string / number / boolean   one slot, codec inlined below
- *   optional                    one slot; absent slot → key omitted
- *                               (Ajv fills the default afterwards)
- *   literal                     one slot, emit the fixed value; on
- *                               decode consume the slot but don't store
- *   nested                      one slot, packed with separator
- *   array                       GREEDY: consumes all remaining slots
- *   custom                      one slot, codec from the field itself
- *
- * The chat-escape helpers are exported for the schema-level
- * `toArgs`/`fromArgs` overrides in packets like ARUP that consume the
- * args list manually.
  */
 
-import type {
-  Field,
-  OptionalField,
-  LiteralField,
-  NestedField,
-  ArrayField,
-  CustomField,
-} from "./fields";
-import type { Fields } from "./schema";
+import type { JsonSchema, FantaCodec } from "./types";
 
 // ---------------------------------------------------------------------
-// Chat-escape helpers.
+// Chat-escape helpers — public so ARUP-style custom codecs can reuse.
 // ---------------------------------------------------------------------
 
-/** Replace fanta meta-characters with their escape sequences. */
 export function escapeFanta(s: string): string {
   return s
     .replaceAll("#", "<num>")
@@ -48,7 +38,6 @@ export function escapeFanta(s: string): string {
     .replaceAll("$", "<dollar>");
 }
 
-/** Inverse of `escapeFanta`. */
 export function unescapeFanta(s: string): string {
   return s
     .replaceAll("<num>", "#")
@@ -57,7 +46,6 @@ export function unescapeFanta(s: string): string {
     .replaceAll("<dollar>", "$");
 }
 
-/** Decode `\uXXXX` escapes the legacy clients emit in chat. */
 export function unescapeUnicode(s: string): string {
   return s.replace(/\\u([\d\w]{1,})/gi, (_m: string, g: string) =>
     String.fromCharCode(parseInt(g, 16)),
@@ -65,144 +53,167 @@ export function unescapeUnicode(s: string): string {
 }
 
 // ---------------------------------------------------------------------
-// Per-field token codecs.
+// Custom codec registry.
 // ---------------------------------------------------------------------
 
-function encodeToken(field: Field<unknown>, value: unknown): string {
-  switch (field.kind) {
-    case "string":
-      return escapeFanta(value as string);
-    case "number":
-      return String(value);
-    case "boolean":
-      return value ? "1" : "0";
-    case "optional":
-      return encodeToken((field as OptionalField<unknown>).inner, value);
-    case "literal": {
-      const v = (field as LiteralField<string | number | boolean>).value;
-      if (typeof v === "string") return escapeFanta(v);
-      if (typeof v === "boolean") return v ? "1" : "0";
-      return String(v);
+const codecs = new Map<string, FantaCodec>();
+
+export function registerCodec(name: string, codec: FantaCodec): void {
+  codecs.set(name, codec);
+}
+
+function getCodec(name: string): FantaCodec {
+  const c = codecs.get(name);
+  if (!c) throw new Error(`fanta: no codec registered as '${name}'`);
+  return c;
+}
+
+// ---------------------------------------------------------------------
+// Per-property token codecs.
+// ---------------------------------------------------------------------
+
+function jsonType(s: JsonSchema): string | undefined {
+  if (typeof s.type === "string") return s.type;
+  if (Array.isArray(s.type)) return s.type[0];
+  return undefined;
+}
+
+function encodeToken(schema: JsonSchema, value: unknown): string {
+  // `const` properties (literal padding like PV's _cid) emit the const
+  // value regardless of what's in the packet — Ajv guarantees they
+  // match.
+  if (schema.const !== undefined) return encodeScalar(typeof schema.const, schema.const);
+
+  const t = jsonType(schema);
+  if (t === "object") {
+    const parts: string[] = [];
+    const props = schema.properties ?? {};
+    const obj = value as Record<string, unknown>;
+    for (const [k, sub] of Object.entries(props)) {
+      parts.push(encodeToken(sub, obj[k]));
     }
-    case "nested": {
-      const f = field as NestedField<Record<string, Field<unknown>>>;
-      const obj = value as Record<string, unknown>;
-      const parts: string[] = [];
-      for (const [k, sub] of Object.entries(f.subfields)) {
-        parts.push(encodeToken(sub, obj[k]));
-      }
-      return parts.join(f.separator);
-    }
-    case "custom":
-      return (field as CustomField<unknown>).toFanta(value);
-    case "array":
-      throw new Error("encodeToken: array fields are handled at the walker level");
+    const joined = parts.join("&");
+    return schema["x-fanta-escape"] ? joined.replaceAll("&", "<and>") : joined;
+  }
+  return encodeScalar(t, value);
+}
+
+function encodeScalar(t: string | undefined, value: unknown): string {
+  switch (t) {
+    case "string":  return escapeFanta(value as string);
+    case "boolean": return value ? "1" : "0";
+    case "integer":
+    case "number":  return String(value);
+    default:        return String(value);
   }
 }
 
-function decodeToken(field: Field<unknown>, token: string, name: string): unknown {
-  switch (field.kind) {
+function decodeToken(schema: JsonSchema, token: string, name: string): unknown {
+  // `const` — fanta wire delivers the const value at this slot; the
+  // schema's const is the source of truth (Ajv would reject anything
+  // else anyway).
+  if (schema.const !== undefined) return schema.const;
+
+  const t = jsonType(schema);
+  if (t === "object") {
+    const raw = schema["x-fanta-escape"] ? token.replaceAll("<and>", "&") : token;
+    const parts = raw.split("&");
+    const result: Record<string, unknown> = {};
+    let i = 0;
+    for (const [k, sub] of Object.entries(schema.properties ?? {})) {
+      result[k] = decodeToken(sub, parts[i++] ?? "", `${name}.${k}`);
+    }
+    return result;
+  }
+  return decodeScalar(t, token, name);
+}
+
+function decodeScalar(t: string | undefined, token: string, name: string): unknown {
+  switch (t) {
     case "string":
       return unescapeUnicode(unescapeFanta(token));
-    case "number": {
-      if (token === "") {
-        throw new Error(`Invalid number for field '${name}': empty token`);
-      }
-      const n = Number(token);
-      if (Number.isNaN(n)) {
-        throw new Error(
-          `Invalid number for field '${name}': ${JSON.stringify(token)}`,
-        );
-      }
-      return n;
-    }
-    case "boolean": {
+    case "boolean":
       if (token !== "0" && token !== "1") {
-        throw new Error(
-          `Invalid boolean for field '${name}': expected "0" or "1", got ${JSON.stringify(token)}`,
-        );
+        throw new Error(`Invalid boolean for field '${name}': expected "0" or "1", got ${JSON.stringify(token)}`);
       }
       return token === "1";
+    case "integer":
+    case "number": {
+      if (token === "") throw new Error(`Invalid number for field '${name}': empty token`);
+      const n = Number(token);
+      if (Number.isNaN(n)) throw new Error(`Invalid number for field '${name}': ${JSON.stringify(token)}`);
+      return n;
     }
-    case "optional":
-      return decodeToken((field as OptionalField<unknown>).inner, token, name);
-    case "literal":
-      // The wire delivers the literal at this position; we ignore the
-      // token (Ajv-validated $header is the only literal that matters)
-      // and the walker omits the key from the result.
-      return undefined;
-    case "nested": {
-      const f = field as NestedField<Record<string, Field<unknown>>>;
-      const parts = token.split(f.separator);
-      const result: Record<string, unknown> = {};
-      let i = 0;
-      for (const [k, sub] of Object.entries(f.subfields)) {
-        result[k] = decodeToken(sub, parts[i++] ?? "", `${name}.${k}`);
-      }
-      return result;
-    }
-    case "custom":
-      return (field as CustomField<unknown>).fromFanta(token, name);
-    case "array":
-      throw new Error("decodeToken: array fields are handled at the walker level");
+    default:
+      return token;
   }
 }
 
 // ---------------------------------------------------------------------
-// Args-list walker.
+// Args-list walker (top-level).
 // ---------------------------------------------------------------------
 
 /**
- * Walk a schema's fields and emit the ordered positional args list.
- * `packet` arrives Ajv-validated (defaults filled, required present).
+ * Walk a packet schema and emit the ordered positional args list.
+ * `packet` arrives Ajv-validated; this just serializes.
  */
 export function toFantaArgs(
-  fields: Fields,
+  schema: JsonSchema,
   packet: Record<string, unknown>,
 ): string[] {
+  if (schema["x-fanta-codec"]) {
+    return getCodec(schema["x-fanta-codec"]).encode(packet);
+  }
+
   const args: string[] = [];
-  for (const [name, field] of Object.entries(fields)) {
-    if (field.kind === "array") {
-      const f = field as ArrayField<Field<unknown>>;
-      const items = packet[name] as unknown[];
-      for (const item of items) args.push(encodeToken(f.element, item));
+  const props = schema.properties ?? {};
+  for (const [name, sub] of Object.entries(props)) {
+    if (name === "$header") continue;
+
+    // Trailing array: greedy — fan out into one slot per element.
+    if (jsonType(sub) === "array") {
+      const items = (packet[name] as unknown[] | undefined) ?? [];
+      const elem = sub.items ?? {};
+      for (const item of items) args.push(encodeToken(elem, item));
       continue;
     }
-    args.push(encodeToken(field, packet[name]));
+
+    args.push(encodeToken(sub, packet[name]));
   }
   return args;
 }
 
 /**
- * Walk a schema's fields and parse the ordered positional args list
- * into a partial typed packet. Ajv runs over the result afterwards to
- * fill optional defaults and enforce required.
- *
- * Literal slots are consumed without storing; arrays consume all
- * remaining slots; optionals omit their key when the wire ended early.
+ * Walk a packet schema and parse the ordered positional args list into
+ * a partial packet. Ajv runs over the result afterwards.
  */
 export function fromFantaArgs(
-  fields: Fields,
+  schema: JsonSchema,
   args: string[],
 ): Record<string, unknown> {
+  if (schema["x-fanta-codec"]) {
+    return getCodec(schema["x-fanta-codec"]).decode(args);
+  }
+
   const result: Record<string, unknown> = {};
+  const props = schema.properties ?? {};
   let cursor = 0;
 
-  for (const [name, field] of Object.entries(fields)) {
-    if (field.kind === "array") {
-      const f = field as ArrayField<Field<unknown>>;
+  for (const [name, sub] of Object.entries(props)) {
+    if (name === "$header") continue;
+
+    if (jsonType(sub) === "array") {
+      const elem = sub.items ?? {};
       result[name] = args
         .slice(cursor)
-        .map((token, i) => decodeToken(f.element, token, `${name}[${i}]`));
+        .map((token, i) => decodeToken(elem, token, `${name}[${i}]`));
       cursor = args.length;
       continue;
     }
 
     const token = args[cursor++];
-    if (token === undefined) continue; // Ajv fills the default / enforces required
-    if (field.kind === "literal") continue; // consumed, not stored
-
-    result[name] = decodeToken(field, token, name);
+    if (token === undefined) continue; // Ajv fills the default
+    result[name] = decodeToken(sub, token, name);
   }
 
   return result;

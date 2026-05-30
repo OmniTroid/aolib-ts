@@ -15,7 +15,7 @@
 import { describe, it, expect } from "bun:test";
 import { encode } from "../src/encode";
 import { decode } from "../src/decode";
-import { c2sSchemas, s2cSchemas } from "../src/packets";
+import { c2sSchemas, s2cSchemas } from "../generated/packets";
 import { server, client } from "../src/session";
 
 // ---------------------------------------------------------------------
@@ -52,10 +52,10 @@ describe("registry shape", () => {
     // shapes; what we verify here is just that the schema's own
     // $header field matches the key it was registered under.
     for (const [key, schema] of Object.entries(c2sSchemas)) {
-      expect(schema.$header).toBe(key);
+      expect((schema.properties as { $header: { const: string } }).$header.const).toBe(key);
     }
     for (const [key, schema] of Object.entries(s2cSchemas)) {
-      expect(schema.$header).toBe(key);
+      expect((schema.properties as { $header: { const: string } }).$header.const).toBe(key);
     }
   });
 });
@@ -236,7 +236,7 @@ describe("bidirectional packets", () => {
     expect(out).toEqual(["CT#Server#hi#1#%"]);
 
     const s = server({ send: () => {} });
-    let received: Record<string, unknown> | undefined;
+    let received: unknown;
     s.on.CT((p) => { received = p; });
     s.receive("CT#Server#hi#1#%");
     expect(received).toEqual({ name: "Server", message: "hi", is_from_server: true });

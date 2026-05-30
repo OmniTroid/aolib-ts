@@ -2,27 +2,21 @@
  * Decode: wire string → typed packet.
  *
  * Auto-detects format from the first byte (`{` ⇒ JSON envelope; anything
- * else ⇒ fanta positional), runs the format-specific parser into a
- * partial object, and hands off to Ajv for validation + default-filling
- * via `./validate`.
+ * else ⇒ fanta positional), parses into a partial object, then hands
+ * off to Ajv via `./validate` for validation + default-filling.
  *
- * The fanta parser (`./fanta`) only owns string→typed token conversion
- * (number parse, boolean parse, etc.); range / type validation comes
- * from the JSON Schema via Ajv afterwards. The JSON parser is plain
- * `JSON.parse` — Ajv validates the result.
- *
- * Defensive checks:
- *   - JSON envelope `$header` must match `schema.$header` (Ajv enforces
- *     this via the schema's `$header` `const`).
- *   - Fanta wire header is checked before parsing args.
+ * The fanta parser only owns string→typed token conversion; range /
+ * type validation comes from the JSON Schema via Ajv afterwards. JSON
+ * mode is plain `JSON.parse` + Ajv.
  */
 
 import { fromFantaArgs } from "./fanta";
 import { validate } from "./validate";
-import type { Fields, Schema } from "./schema";
+import "./codecs";
+import type { JsonSchema } from "./types";
 
-export function decode<F extends Fields>(
-  schema: Schema<F>,
+export function decode(
+  schema: JsonSchema,
   wire: string,
 ): Record<string, unknown> {
   return wire.startsWith("{") ? decodeJson(schema, wire) : decodeFanta(schema, wire);
@@ -46,8 +40,16 @@ export function readHeader(wire: string): string {
   return idx === -1 ? wire : wire.slice(0, idx);
 }
 
-function decodeJson<F extends Fields>(
-  schema: Schema<F>,
+function headerOf(schema: JsonSchema): string {
+  const h = schema.properties?.$header?.const;
+  if (typeof h !== "string") {
+    throw new Error("decode: schema is missing a string `$header` const");
+  }
+  return h;
+}
+
+function decodeJson(
+  schema: JsonSchema,
   wire: string,
 ): Record<string, unknown> {
   let parsed: Record<string, unknown>;
@@ -57,21 +59,34 @@ function decodeJson<F extends Fields>(
     throw new Error(`Invalid JSON wire: ${(err as Error).message}`);
   }
 
-  // Explicit check beats Ajv's generic const-violation error, and is
-  // symmetric with the fanta path's own header check.
-  if (parsed.$header !== schema.$header) {
+  const expected = headerOf(schema);
+  if (parsed.$header !== expected) {
     throw new Error(
-      `Wire header mismatch: expected '${schema.$header}', got '${String(parsed.$header)}'`,
+      `Wire header mismatch: expected '${expected}', got '${String(parsed.$header)}'`,
     );
   }
 
   validate(schema, parsed);
-  delete parsed.$header;
+  stripConsts(schema, parsed);
   return parsed;
 }
 
-function decodeFanta<F extends Fields>(
-  schema: Schema<F>,
+/**
+ * Drop properties whose value is fixed by `const` (e.g. `$header`,
+ * PV's `_cid`). The class instance types exclude these, so the
+ * runtime shape needs to match.
+ */
+function stripConsts(schema: JsonSchema, value: Record<string, unknown>): void {
+  for (const [k, sub] of Object.entries(schema.properties ?? {})) {
+    if ("const" in sub) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- stripping const-typed schema props by name
+      delete value[k];
+    }
+  }
+}
+
+function decodeFanta(
+  schema: JsonSchema,
   wire: string,
 ): Record<string, unknown> {
   // Peel terminator forms — accept canonical `HEADER#a#b#%`, plus the
@@ -81,23 +96,18 @@ function decodeFanta<F extends Fields>(
   if (trimmed.endsWith("#")) trimmed = trimmed.slice(0, -1);
 
   const all = trimmed.split("#");
-  const wireHeader = all[0];
-  if (wireHeader !== schema.$header) {
+  const expected = headerOf(schema);
+  if (all[0] !== expected) {
     throw new Error(
-      `Wire header mismatch: expected '${schema.$header}', got '${String(wireHeader)}'`,
+      `Wire header mismatch: expected '${expected}', got '${String(all[0])}'`,
     );
   }
   const args = all.slice(1);
 
-  // Schema-level override has precedence — used for packets whose
-  // positional layout the default args walker can't express.
-  const partial = schema.fromArgs
-    ? schema.fromArgs(args)
-    : fromFantaArgs(schema.fields, args);
+  const partial = fromFantaArgs(schema, args);
 
-  // Ajv requires `$header` to match the const; set, validate, strip.
-  partial.$header = schema.$header;
+  partial.$header = expected;
   validate(schema, partial);
-  delete partial.$header;
+  stripConsts(schema, partial);
   return partial;
 }

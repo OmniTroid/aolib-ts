@@ -155,7 +155,7 @@ describe("client(): on (C2S)", () => {
 
   it("on.CC decodes player_id, char_id, and the optional char_password slot", () => {
     const c = client(makeBuf().config);
-    let received: { player_id: number; char_id: number; char_password: string } | undefined;
+    let received: { player_id: number; char_id: number; char_password?: string } | undefined;
     c.on.CC((p) => {
       received = p;
     });
@@ -186,7 +186,7 @@ describe("bidirectional MC", () => {
     expect(out).toEqual(["MC#track1#5##0#%"]);
 
     // Server (them) broadcasts an MC — has `channel` and `looping`.
-    let received: Record<string, unknown> | undefined;
+    let received: unknown;
     s.on.MC((p) => {
       received = p;
     });
@@ -215,7 +215,7 @@ describe("bidirectional MC", () => {
     });
     expect(out).toEqual(["MC#track2#6#Edgeworth#0#1#0#%"]);
 
-    let received: Record<string, unknown> | undefined;
+    let received: unknown;
     c.on.MC((p) => {
       received = p;
     });

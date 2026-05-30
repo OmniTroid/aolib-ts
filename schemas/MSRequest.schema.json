@@ -138,7 +138,8 @@
       "default": {
         "x": 0,
         "y": 0
-      }
+      },
+      "x-fanta-escape": true
     },
     "noninterrupting_preanim": {
       "type": "boolean",
