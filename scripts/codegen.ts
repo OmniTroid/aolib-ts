@@ -3,15 +3,16 @@
  *
  * Inputs:
  *   - aolib-meta/schemas/packets/<Name>.schema.json — one per packet
- *   - aolib-meta/schemas/enums/<Name>.enum.json     — one per named enum,
- *     referenced from packet schemas via `{ "$ref": "<Name>.enum.json" }`.
- *     Each carries an
- *     `x-enum-names` array parallel to the `enum` values so codegen
- *     can produce a TS `enum`.
+ *   - aolib-meta/schemas/enums/<Name>.schema.json   — one per named enum;
+ *     each carries an `x-enum-names` array parallel to the `enum` values
+ *     so codegen can produce a TS `enum`. Packet schemas $ref them as
+ *     `../enums/<Name>.schema.json`.
+ *   - aolib-meta/schemas/types/<Name>.schema.json   — shared object types,
+ *     $ref'd from packets as `../types/<Name>.schema.json`.
  *   - scripts/registry.json — direction routing per header
  *
  * Outputs:
- *   - generated/enums.ts — one `export enum` per .enum.json file
+ *   - generated/enums.ts — one `export enum` per file under enums/
  *   - generated/packets.ts — one class per packet, plus direction maps
  *
  * For each .schema.json this produces a TypeScript class:
@@ -78,7 +79,7 @@ interface Registry {
 
 interface EnumDef {
   name: string;            // TS enum name, also file basename
-  filename: string;        // e.g. "Side.enum.json"
+  filename: string;        // e.g. "Side.schema.json"
   values: unknown[];       // schema enum values
   names: string[];         // parallel x-enum-names
   isString: boolean;       // string vs integer underlying type
@@ -87,7 +88,7 @@ interface EnumDef {
 
 interface TypeDef {
   name: string;            // TS interface name, also file basename
-  filename: string;        // e.g. "Offset.type.json"
+  filename: string;        // e.g. "Offset.schema.json"
   schema: JsonSchema;      // the raw schema, used to render the body
   description?: string;
 }
@@ -100,29 +101,23 @@ function loadRegistry(): Registry {
   return JSON.parse(readFileSync(REGISTRY_FILE, "utf8")) as Registry;
 }
 
-function listPacketNames(): string[] {
-  return readdirSync(PACKETS_DIR)
-    .filter((f) => f.endsWith(".schema.json"))
-    .map((f) => f.replace(/\.schema\.json$/, ""));
-}
-
-function listEnumFiles(): string[] {
-  return readdirSync(ENUMS_DIR).filter((f) => f.endsWith(".enum.json"));
-}
-
-function listTypeFiles(): string[] {
+function listSchemaFiles(dir: string): string[] {
   try {
-    return readdirSync(TYPES_DIR).filter((f) => f.endsWith(".type.json"));
+    return readdirSync(dir).filter((f) => f.endsWith(".schema.json"));
   } catch {
     return [];
   }
 }
 
+function listPacketNames(): string[] {
+  return listSchemaFiles(PACKETS_DIR).map((f) => f.replace(/\.schema\.json$/, ""));
+}
+
 function loadTypes(): Map<string, TypeDef> {
   const out = new Map<string, TypeDef>();
-  for (const filename of listTypeFiles()) {
+  for (const filename of listSchemaFiles(TYPES_DIR)) {
     const schema = loadJson(join(TYPES_DIR, filename));
-    const name = filename.replace(/\.type\.json$/, "");
+    const name = filename.replace(/\.schema\.json$/, "");
     out.set(filename, {
       name,
       filename,
@@ -135,9 +130,9 @@ function loadTypes(): Map<string, TypeDef> {
 
 function loadEnums(): Map<string, EnumDef> {
   const out = new Map<string, EnumDef>();
-  for (const filename of listEnumFiles()) {
+  for (const filename of listSchemaFiles(ENUMS_DIR)) {
     const schema = loadJson(join(ENUMS_DIR, filename));
-    const name = filename.replace(/\.enum\.json$/, "");
+    const name = filename.replace(/\.schema\.json$/, "");
     if (!schema.enum || !schema["x-enum-names"]) {
       throw new Error(`Enum schema ${filename} missing 'enum' or 'x-enum-names'`);
     }
@@ -175,12 +170,15 @@ interface RenderCtx {
 
 function renderType(s: JsonSchema, indent: number, ctx: RenderCtx): string {
   if (s.$ref) {
-    const enumDef = ctx.enums.get(s.$ref);
+    // Packet `$ref`s are relative paths (`../enums/Foo.schema.json`);
+    // the enum/type maps are keyed by basename.
+    const key = s.$ref.replace(/^.*\//, "");
+    const enumDef = ctx.enums.get(key);
     if (enumDef) {
       ctx.enumImports.add(enumDef.name);
       return enumDef.name;
     }
-    const typeDef = ctx.types.get(s.$ref);
+    const typeDef = ctx.types.get(key);
     if (typeDef) {
       ctx.typeImports.add(typeDef.name);
       return typeDef.name;
@@ -476,10 +474,10 @@ function main(): void {
   const enumNames = [...enums.values()].map((e) => e.name).sort();
   const typeNames = [...types.values()].map((t) => t.name).sort();
   for (const name of enumNames) {
-    parts.push(`import ${name}EnumSchema from "../aolib-meta/schemas/enums/${name}.enum.json";\n`);
+    parts.push(`import ${name}EnumSchema from "../aolib-meta/schemas/enums/${name}.schema.json";\n`);
   }
   for (const name of typeNames) {
-    parts.push(`import ${name}TypeSchema from "../aolib-meta/schemas/types/${name}.type.json";\n`);
+    parts.push(`import ${name}TypeSchema from "../aolib-meta/schemas/types/${name}.schema.json";\n`);
   }
   parts.push("");
 

@@ -71,7 +71,8 @@ function getCodec(name: string): FantaCodec {
 
 // ---------------------------------------------------------------------
 // $ref registry — mirrors Ajv's schema registry so the walker can look
-// through `$ref` to find the underlying type / enum.
+// through `$ref` to find the underlying type / enum. Schemas are keyed
+// by their `$id` (e.g. `/enums/Foo.schema.json`).
 // ---------------------------------------------------------------------
 
 const refSchemas = new Map<string, JsonSchema>();
@@ -81,12 +82,30 @@ export function registerRefSchema(id: string, schema: JsonSchema): void {
 }
 
 /**
+ * RFC 3986 §5.2-style path resolution. Schemas use absolute-path `$id`s
+ * (e.g. `/packets/MS.schema.json`); refs are relative paths
+ * (`../enums/Foo.schema.json`). Resolution gives back another absolute
+ * path matching the target's `$id`.
+ */
+function resolvePath(ref: string, base: string): string {
+  if (!base) return ref;
+  if (ref.startsWith("/")) return ref;
+  const baseDir = base.slice(0, base.lastIndexOf("/") + 1);
+  const parts: string[] = [];
+  for (const seg of (baseDir + ref).split("/")) {
+    if (seg === "..") parts.pop();
+    else if (seg !== "." && seg !== "") parts.push(seg);
+  }
+  return (base.startsWith("/") ? "/" : "") + parts.join("/");
+}
+
+/**
  * Resolve a `$ref` against the registry. Sibling keywords on the
  * referring property (e.g. `default`) win over the referenced schema.
  */
-function resolveRef(s: JsonSchema): JsonSchema {
+function resolveRef(s: JsonSchema, baseId: string): JsonSchema {
   if (!s.$ref) return s;
-  const target = refSchemas.get(s.$ref);
+  const target = refSchemas.get(resolvePath(s.$ref, baseId));
   if (!target) return s;
   return { ...target, ...s };
 }
@@ -101,8 +120,8 @@ function jsonType(s: JsonSchema): string | undefined {
   return undefined;
 }
 
-function encodeToken(rawSchema: JsonSchema, value: unknown): string {
-  const schema = resolveRef(rawSchema);
+function encodeToken(rawSchema: JsonSchema, value: unknown, baseId: string): string {
+  const schema = resolveRef(rawSchema, baseId);
   // `const` properties (literal padding like PV's _cid) emit the const
   // value regardless of what's in the packet — Ajv guarantees they
   // match.
@@ -114,7 +133,7 @@ function encodeToken(rawSchema: JsonSchema, value: unknown): string {
     const props = schema.properties ?? {};
     const obj = value as Record<string, unknown>;
     for (const [k, sub] of Object.entries(props)) {
-      parts.push(encodeToken(sub, obj[k]));
+      parts.push(encodeToken(sub, obj[k], baseId));
     }
     return parts.join("&");
   }
@@ -131,8 +150,8 @@ function encodeScalar(t: string | undefined, value: unknown): string {
   }
 }
 
-function decodeToken(rawSchema: JsonSchema, token: string, name: string): unknown {
-  const schema = resolveRef(rawSchema);
+function decodeToken(rawSchema: JsonSchema, token: string, name: string, baseId: string): unknown {
+  const schema = resolveRef(rawSchema, baseId);
   // `const` — fanta wire delivers the const value at this slot; the
   // schema's const is the source of truth (Ajv would reject anything
   // else anyway).
@@ -145,7 +164,7 @@ function decodeToken(rawSchema: JsonSchema, token: string, name: string): unknow
     const result: Record<string, unknown> = {};
     let i = 0;
     for (const [k, sub] of Object.entries(schema.properties ?? {})) {
-      result[k] = decodeToken(sub, parts[i++] ?? "", `${name}.${k}`);
+      result[k] = decodeToken(sub, parts[i++] ?? "", `${name}.${k}`, baseId);
     }
     return result;
   }
@@ -189,6 +208,7 @@ export function toFantaArgs(
     return getCodec(schema["x-fanta-codec"]).encode(packet);
   }
 
+  const baseId = typeof schema.$id === "string" ? schema.$id : "";
   const args: string[] = [];
   const props = schema.properties ?? {};
   for (const [name, sub] of Object.entries(props)) {
@@ -198,11 +218,11 @@ export function toFantaArgs(
     if (jsonType(sub) === "array") {
       const items = (packet[name] as unknown[] | undefined) ?? [];
       const elem = sub.items ?? {};
-      for (const item of items) args.push(encodeToken(elem, item));
+      for (const item of items) args.push(encodeToken(elem, item, baseId));
       continue;
     }
 
-    args.push(encodeToken(sub, packet[name]));
+    args.push(encodeToken(sub, packet[name], baseId));
   }
   return args;
 }
@@ -219,6 +239,7 @@ export function fromFantaArgs(
     return getCodec(schema["x-fanta-codec"]).decode(args);
   }
 
+  const baseId = typeof schema.$id === "string" ? schema.$id : "";
   const result: Record<string, unknown> = {};
   const props = schema.properties ?? {};
   let cursor = 0;
@@ -230,14 +251,14 @@ export function fromFantaArgs(
       const elem = sub.items ?? {};
       result[name] = args
         .slice(cursor)
-        .map((token, i) => decodeToken(elem, token, `${name}[${i}]`));
+        .map((token, i) => decodeToken(elem, token, `${name}[${i}]`, baseId));
       cursor = args.length;
       continue;
     }
 
     const token = args[cursor++];
     if (token === undefined) continue; // Ajv fills the default
-    result[name] = decodeToken(sub, token, name);
+    result[name] = decodeToken(sub, token, name, baseId);
   }
 
   return result;

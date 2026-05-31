@@ -5,28 +5,22 @@
 import { AreaUpdateType, DeskModifier, EmoteModifier, Flip, ShoutModifier, Side, TextColor } from "./enums";
 import { Offset } from "./types";
 
-import AreaUpdateTypeEnumSchema from "../aolib-meta/schemas/enums/AreaUpdateType.enum.json";
+import AreaUpdateTypeEnumSchema from "../aolib-meta/schemas/enums/AreaUpdateType.schema.json";
 
-import DeskModifierEnumSchema from "../aolib-meta/schemas/enums/DeskModifier.enum.json";
+import DeskModifierEnumSchema from "../aolib-meta/schemas/enums/DeskModifier.schema.json";
 
-import EmoteModifierEnumSchema from "../aolib-meta/schemas/enums/EmoteModifier.enum.json";
+import EmoteModifierEnumSchema from "../aolib-meta/schemas/enums/EmoteModifier.schema.json";
 
-import FlipEnumSchema from "../aolib-meta/schemas/enums/Flip.enum.json";
+import FlipEnumSchema from "../aolib-meta/schemas/enums/Flip.schema.json";
 
-import ShoutModifierEnumSchema from "../aolib-meta/schemas/enums/ShoutModifier.enum.json";
+import ShoutModifierEnumSchema from "../aolib-meta/schemas/enums/ShoutModifier.schema.json";
 
-import SideEnumSchema from "../aolib-meta/schemas/enums/Side.enum.json";
+import SideEnumSchema from "../aolib-meta/schemas/enums/Side.schema.json";
 
-import TextColorEnumSchema from "../aolib-meta/schemas/enums/TextColor.enum.json";
+import TextColorEnumSchema from "../aolib-meta/schemas/enums/TextColor.schema.json";
 
-import OffsetTypeSchema from "../aolib-meta/schemas/types/Offset.type.json";
+import OffsetTypeSchema from "../aolib-meta/schemas/types/Offset.schema.json";
 
-
-import AESchema from "../aolib-meta/schemas/packets/AE.schema.json";
-
-import AMSchema from "../aolib-meta/schemas/packets/AM.schema.json";
-
-import ANSchema from "../aolib-meta/schemas/packets/AN.schema.json";
 
 import ARUPSchema from "../aolib-meta/schemas/packets/ARUP.schema.json";
 
@@ -152,12 +146,6 @@ import askchaaSchema from "../aolib-meta/schemas/packets/askchaa.schema.json";
 
 import decryptorSchema from "../aolib-meta/schemas/packets/decryptor.schema.json";
 
-
-export { default as AESchema } from "../aolib-meta/schemas/packets/AE.schema.json";
-
-export { default as AMSchema } from "../aolib-meta/schemas/packets/AM.schema.json";
-
-export { default as ANSchema } from "../aolib-meta/schemas/packets/AN.schema.json";
 
 export { default as ARUPSchema } from "../aolib-meta/schemas/packets/ARUP.schema.json";
 
@@ -287,39 +275,6 @@ export { default as decryptorSchema } from "../aolib-meta/schemas/packets/decryp
 export const enumSchemas = [AreaUpdateTypeEnumSchema, DeskModifierEnumSchema, EmoteModifierEnumSchema, FlipEnumSchema, ShoutModifierEnumSchema, SideEnumSchema, TextColorEnumSchema];
 
 export const typeSchemas = [OffsetTypeSchema];
-
-
-export class AE {
-  id!: number;
-
-  constructor(input: {
-    id: number;
-  }) {
-    this.id = input.id;
-  }
-}
-
-
-export class AM {
-  batch!: number;
-
-  constructor(input: {
-    batch: number;
-  }) {
-    this.batch = input.batch;
-  }
-}
-
-
-export class AN {
-  batch!: number;
-
-  constructor(input: {
-    batch: number;
-  }) {
-    this.batch = input.batch;
-  }
-}
 
 
 export class ARUP {
@@ -1340,9 +1295,6 @@ export const c2sSchemas = {
   CT: CTRequestSchema,
   MC: MCRequestSchema,
   MS: MSRequestSchema,
-  AE: AESchema,
-  AM: AMSchema,
-  AN: ANSchema,
   DE: DESchema,
   EE: EESchema,
   PE: PESchema,
@@ -1414,9 +1366,6 @@ export const c2sClasses = {
   CT: CTRequest,
   MC: MCRequest,
   MS: MSRequest,
-  AE: AE,
-  AM: AM,
-  AN: AN,
   DE: DE,
   EE: EE,
   PE: PE,
@@ -1488,9 +1437,6 @@ export type C2SInputs = {
   CT: ConstructorParameters<typeof CTRequest>[0];
   MC: ConstructorParameters<typeof MCRequest>[0];
   MS: ConstructorParameters<typeof MSRequest>[0];
-  AE: ConstructorParameters<typeof AE>[0];
-  AM: ConstructorParameters<typeof AM>[0];
-  AN: ConstructorParameters<typeof AN>[0];
   DE: ConstructorParameters<typeof DE>[0];
   EE: ConstructorParameters<typeof EE>[0];
   PE: ConstructorParameters<typeof PE>[0];
@@ -1562,9 +1508,6 @@ export type C2SOutputs = {
   CT: CTRequest;
   MC: MCRequest;
   MS: MSRequest;
-  AE: AE;
-  AM: AM;
-  AN: AN;
   DE: DE;
   EE: EE;
   PE: PE;

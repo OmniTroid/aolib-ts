@@ -26,7 +26,7 @@ describe("registry shape", () => {
   it("c2sSchemas covers the expected headers", () => {
     expect(Object.keys(c2sSchemas).sort()).toEqual(
       [
-        "AE", "AM", "AN", "CC", "CH", "CT", "DE", "EE", "HI", "HP",
+        "CC", "CH", "CT", "DE", "EE", "HI", "HP",
         "ID", "MA", "MC", "MS", "PE", "RC", "RD", "RM", "RT", "VS_FRAME",
         "VS_JOIN", "VS_LEAVE", "VS_SPEAK", "ZZ", "askchaa",
       ].sort(),
@@ -183,12 +183,10 @@ describe("session integration: new packets are reachable", () => {
   it("server.send.<C2S> works for the new c2s packets", () => {
     const out: string[] = [];
     const s = server({ send: (w) => out.push(w) });
-    s.send.AE({ id: 0 });
     s.send.RC({});
     s.send.MA({ id: 1, duration: 60, reason: "spam" });
     s.send.VS_FRAME({ payload: "BASE64==" });
     expect(out).toEqual([
-      "AE#0#%",
       "RC#%",
       "MA#1#60#spam#%",
       "VS_FRAME#BASE64==#%",

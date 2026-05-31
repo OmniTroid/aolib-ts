@@ -23,11 +23,13 @@ export enum EmoteModifier {
   NO_PREANIM = 0,
   PREANIM = 1,
   PREANIM_AND_OBJECTION = 2,
+  UNUSED_3 = 3,
+  UNUSED_4 = 4,
   ZOOM = 5,
   OBJECTION_ZOOM = 6,
 }
 
-/** Sprite mirroring. Spec defines only NONE / HORIZONTAL; VERTICAL and HORIZONTAL_AND_VERTICAL are non-spec extensions servers may send. */
+/** Sprite mirroring. */
 export enum Flip {
   NONE = 0,
   HORIZONTAL = 1,
@@ -35,7 +37,7 @@ export enum Flip {
   HORIZONTAL_AND_VERTICAL = 3,
 }
 
-/** Shout / objection selector. The legacy `4&{name}` wire form for naming a custom shout strips to CUSTOM at the codec layer. */
+/** Shout / objection selector. */
 export enum ShoutModifier {
   NONE = 0,
   HOLD_IT = 1,

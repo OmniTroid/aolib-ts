@@ -28,8 +28,13 @@ const ajv = new Ajv({
   strict: false,
 });
 
-// Register shared enum + type schemas so packet schemas' `$ref`
-// resolves at both the validator (Ajv) and the wire walker (fanta).
+// Register shared enum + type schemas so packet `$ref`s resolve at
+// both the validator (Ajv) and the wire walker (fanta). Each schema's
+// `$id` is its absolute path from the schemas root (e.g.
+// `/enums/Foo.schema.json`); packet `$ref`s use relative paths
+// (`../enums/Foo.schema.json`) which Ajv resolves against the parent
+// packet's `$id` (`/packets/X.schema.json`) per RFC 3986, producing the
+// shared schema's `$id` exactly.
 for (const s of [...enumSchemas, ...typeSchemas] as JsonSchema[]) {
   ajv.addSchema(s);
   if (typeof s.$id === "string") registerRefSchema(s.$id, s);
