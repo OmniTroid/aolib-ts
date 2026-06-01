@@ -9,7 +9,9 @@
  *     `../enums/<Name>.schema.json`.
  *   - aolib-meta/schemas/types/<Name>.schema.json   — shared object types,
  *     $ref'd from packets as `../types/<Name>.schema.json`.
- *   - scripts/registry.json — direction routing per header
+ *
+ * Direction maps (c2s/s2c) are derived from each packet's `x-receiver`
+ * + `$header` const — no sidecar registry.
  *
  * Outputs:
  *   - generated/enums.ts — one `export enum` per file under enums/
@@ -39,7 +41,6 @@ const SCHEMAS_ROOT = join(ROOT, "aolib-meta/schemas");
 const PACKETS_DIR = join(SCHEMAS_ROOT, "packets");
 const ENUMS_DIR = join(SCHEMAS_ROOT, "enums");
 const TYPES_DIR = join(SCHEMAS_ROOT, "types");
-const REGISTRY_FILE = join(SCRIPTS_DIR, "registry.json");
 const OUT_PACKETS = join(ROOT, "generated/packets.ts");
 const OUT_ENUMS = join(ROOT, "generated/enums.ts");
 const OUT_TYPES = join(ROOT, "generated/types.ts");
@@ -63,18 +64,14 @@ interface JsonSchema {
   "x-fanta-escape"?: boolean;
   "x-fanta-codec"?: string;
   "x-enum-names"?: string[];
+  "x-receiver"?: "client" | "server";
   [k: string]: unknown;
 }
 
-interface RegistryEntry {
-  header: string;
-  schema: string;
-}
-
-interface Registry {
-  c2s: (string | RegistryEntry)[];
-  s2c: (string | RegistryEntry)[];
-  both: string[];
+interface PacketMeta {
+  name: string;             // schema basename (e.g. "MCRequest")
+  header: string;           // wire header (e.g. "MC")
+  receiver: "client" | "server";
 }
 
 interface EnumDef {
@@ -97,8 +94,21 @@ function loadJson(path: string): JsonSchema {
   return JSON.parse(readFileSync(path, "utf8")) as JsonSchema;
 }
 
-function loadRegistry(): Registry {
-  return JSON.parse(readFileSync(REGISTRY_FILE, "utf8")) as Registry;
+function loadPacketMeta(): PacketMeta[] {
+  const out: PacketMeta[] = [];
+  for (const name of listPacketNames()) {
+    const schema = loadJson(join(PACKETS_DIR, `${name}.schema.json`));
+    const header = schema.properties?.$header?.const;
+    const receiver = schema["x-receiver"];
+    if (typeof header !== "string") {
+      throw new Error(`Packet ${name}: $header.const is missing or not a string`);
+    }
+    if (receiver !== "client" && receiver !== "server") {
+      throw new Error(`Packet ${name}: x-receiver must be "client" or "server"`);
+    }
+    out.push({ name, header, receiver });
+  }
+  return out;
 }
 
 function listSchemaFiles(dir: string): string[] {
@@ -149,12 +159,6 @@ function loadEnums(): Map<string, EnumDef> {
     });
   }
   return out;
-}
-
-function normalizeRegistry(entries: (string | RegistryEntry)[]): RegistryEntry[] {
-  return entries.map((e) =>
-    typeof e === "string" ? { header: e, schema: e } : e,
-  );
 }
 
 // ---------------------------------------------------------------------
@@ -346,84 +350,47 @@ function emitEnumsFile(enums: Map<string, EnumDef>): string {
 // Direction maps
 // ---------------------------------------------------------------------
 
-function emitDirectionMaps(reg: Registry): string {
-  const c2s = normalizeRegistry(reg.c2s);
-  const s2c = normalizeRegistry(reg.s2c);
-  const both = reg.both;
+function emitDirectionMaps(packets: PacketMeta[]): string {
+  // x-receiver names the *receiver*; c2s = packets the server receives.
+  const c2s = packets.filter((p) => p.receiver === "server");
+  const s2c = packets.filter((p) => p.receiver === "client");
 
-  const schemaLine = (header: string, schemaName: string) =>
-    `  ${quoteKey(header)}: ${schemaName}Schema,`;
-  const classLine = (header: string, className: string) =>
-    `  ${quoteKey(header)}: ${className},`;
-  const inputLine = (header: string, className: string) =>
-    `  ${quoteKey(header)}: ConstructorParameters<typeof ${className}>[0];`;
-  const outputLine = (header: string, className: string) =>
-    `  ${quoteKey(header)}: ${className};`;
-
-  const c2sSchemas = [
-    ...c2s.map((e) => schemaLine(e.header, e.schema)),
-    ...both.map((h) => schemaLine(h, h)),
-  ];
-  const s2cSchemas = [
-    ...s2c.map((e) => schemaLine(e.header, e.schema)),
-    ...both.map((h) => schemaLine(h, h)),
-  ];
-  const c2sClasses = [
-    ...c2s.map((e) => classLine(e.header, e.schema)),
-    ...both.map((h) => classLine(h, h)),
-  ];
-  const s2cClasses = [
-    ...s2c.map((e) => classLine(e.header, e.schema)),
-    ...both.map((h) => classLine(h, h)),
-  ];
-  const c2sIn = [
-    ...c2s.map((e) => inputLine(e.header, e.schema)),
-    ...both.map((h) => inputLine(h, h)),
-  ];
-  const s2cIn = [
-    ...s2c.map((e) => inputLine(e.header, e.schema)),
-    ...both.map((h) => inputLine(h, h)),
-  ];
-  const c2sOut = [
-    ...c2s.map((e) => outputLine(e.header, e.schema)),
-    ...both.map((h) => outputLine(h, h)),
-  ];
-  const s2cOut = [
-    ...s2c.map((e) => outputLine(e.header, e.schema)),
-    ...both.map((h) => outputLine(h, h)),
-  ];
+  const schemaLine = (p: PacketMeta) => `  ${quoteKey(p.header)}: ${p.name}Schema,`;
+  const classLine  = (p: PacketMeta) => `  ${quoteKey(p.header)}: ${p.name},`;
+  const inputLine  = (p: PacketMeta) => `  ${quoteKey(p.header)}: ConstructorParameters<typeof ${p.name}>[0];`;
+  const outputLine = (p: PacketMeta) => `  ${quoteKey(p.header)}: ${p.name};`;
 
   return `
 export const c2sSchemas = {
-${c2sSchemas.join("\n")}
+${c2s.map(schemaLine).join("\n")}
 } as const;
 
 export const s2cSchemas = {
-${s2cSchemas.join("\n")}
+${s2c.map(schemaLine).join("\n")}
 } as const;
 
 export const c2sClasses = {
-${c2sClasses.join("\n")}
+${c2s.map(classLine).join("\n")}
 } as const;
 
 export const s2cClasses = {
-${s2cClasses.join("\n")}
+${s2c.map(classLine).join("\n")}
 } as const;
 
 export type C2SInputs = {
-${c2sIn.join("\n")}
+${c2s.map(inputLine).join("\n")}
 };
 
 export type S2CInputs = {
-${s2cIn.join("\n")}
+${s2c.map(inputLine).join("\n")}
 };
 
 export type C2SOutputs = {
-${c2sOut.join("\n")}
+${c2s.map(outputLine).join("\n")}
 };
 
 export type S2COutputs = {
-${s2cOut.join("\n")}
+${s2c.map(outputLine).join("\n")}
 };
 `;
 }
@@ -436,7 +403,7 @@ function main(): void {
   const enums = loadEnums();
   const types = loadTypes();
   const packets = [...listPacketNames()].sort();
-  const reg = loadRegistry();
+  const meta = loadPacketMeta().sort((a, b) => a.header.localeCompare(b.header));
 
   // Enums + types files are straightforward — no per-packet context.
   writeFileSync(OUT_ENUMS, emitEnumsFile(enums));
@@ -504,7 +471,7 @@ function main(): void {
     parts.push("");
   }
 
-  parts.push(emitDirectionMaps(reg));
+  parts.push(emitDirectionMaps(meta));
 
   writeFileSync(OUT_PACKETS, parts.join("\n"));
   console.log(

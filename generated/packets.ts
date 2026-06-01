@@ -66,7 +66,9 @@ import FMSchema from "../aolib-meta/schemas/packets/FM.schema.json";
 
 import HISchema from "../aolib-meta/schemas/packets/HI.schema.json";
 
-import HPSchema from "../aolib-meta/schemas/packets/HP.schema.json";
+import HPBroadcastSchema from "../aolib-meta/schemas/packets/HPBroadcast.schema.json";
+
+import HPRequestSchema from "../aolib-meta/schemas/packets/HPRequest.schema.json";
 
 import IDClientSchema from "../aolib-meta/schemas/packets/IDClient.schema.json";
 
@@ -108,7 +110,9 @@ import RMSchema from "../aolib-meta/schemas/packets/RM.schema.json";
 
 import RMCSchema from "../aolib-meta/schemas/packets/RMC.schema.json";
 
-import RTSchema from "../aolib-meta/schemas/packets/RT.schema.json";
+import RTBroadcastSchema from "../aolib-meta/schemas/packets/RTBroadcast.schema.json";
+
+import RTRequestSchema from "../aolib-meta/schemas/packets/RTRequest.schema.json";
 
 import SCSchema from "../aolib-meta/schemas/packets/SC.schema.json";
 
@@ -140,7 +144,9 @@ import VS_SPEAKBroadcastSchema from "../aolib-meta/schemas/packets/VS_SPEAKBroad
 
 import VS_SPEAKRequestSchema from "../aolib-meta/schemas/packets/VS_SPEAKRequest.schema.json";
 
-import ZZSchema from "../aolib-meta/schemas/packets/ZZ.schema.json";
+import ZZBroadcastSchema from "../aolib-meta/schemas/packets/ZZBroadcast.schema.json";
+
+import ZZRequestSchema from "../aolib-meta/schemas/packets/ZZRequest.schema.json";
 
 import askchaaSchema from "../aolib-meta/schemas/packets/askchaa.schema.json";
 
@@ -191,7 +197,9 @@ export { default as FMSchema } from "../aolib-meta/schemas/packets/FM.schema.jso
 
 export { default as HISchema } from "../aolib-meta/schemas/packets/HI.schema.json";
 
-export { default as HPSchema } from "../aolib-meta/schemas/packets/HP.schema.json";
+export { default as HPBroadcastSchema } from "../aolib-meta/schemas/packets/HPBroadcast.schema.json";
+
+export { default as HPRequestSchema } from "../aolib-meta/schemas/packets/HPRequest.schema.json";
 
 export { default as IDClientSchema } from "../aolib-meta/schemas/packets/IDClient.schema.json";
 
@@ -233,7 +241,9 @@ export { default as RMSchema } from "../aolib-meta/schemas/packets/RM.schema.jso
 
 export { default as RMCSchema } from "../aolib-meta/schemas/packets/RMC.schema.json";
 
-export { default as RTSchema } from "../aolib-meta/schemas/packets/RT.schema.json";
+export { default as RTBroadcastSchema } from "../aolib-meta/schemas/packets/RTBroadcast.schema.json";
+
+export { default as RTRequestSchema } from "../aolib-meta/schemas/packets/RTRequest.schema.json";
 
 export { default as SCSchema } from "../aolib-meta/schemas/packets/SC.schema.json";
 
@@ -265,7 +275,9 @@ export { default as VS_SPEAKBroadcastSchema } from "../aolib-meta/schemas/packet
 
 export { default as VS_SPEAKRequestSchema } from "../aolib-meta/schemas/packets/VS_SPEAKRequest.schema.json";
 
-export { default as ZZSchema } from "../aolib-meta/schemas/packets/ZZ.schema.json";
+export { default as ZZBroadcastSchema } from "../aolib-meta/schemas/packets/ZZBroadcast.schema.json";
+
+export { default as ZZRequestSchema } from "../aolib-meta/schemas/packets/ZZRequest.schema.json";
 
 export { default as askchaaSchema } from "../aolib-meta/schemas/packets/askchaa.schema.json";
 
@@ -576,7 +588,21 @@ export class HI {
 }
 
 
-export class HP {
+export class HPBroadcast {
+  bar!: number;
+  value!: number;
+
+  constructor(input: {
+    bar: number;
+    value: number;
+  }) {
+    this.bar = input.bar;
+    this.value = input.value;
+  }
+}
+
+
+export class HPRequest {
   bar!: number;
   value!: number;
 
@@ -1031,7 +1057,21 @@ export class RMC {
 }
 
 
-export class RT {
+export class RTBroadcast {
+  animation!: string;
+  judgeId!: number;
+
+  constructor(input: {
+    animation: string;
+    judgeId?: number;
+  }) {
+    this.animation = input.animation;
+    this.judgeId = input.judgeId ?? -1;
+  }
+}
+
+
+export class RTRequest {
   animation!: string;
   judgeId!: number;
 
@@ -1250,7 +1290,21 @@ export class VS_SPEAKRequest {
 }
 
 
-export class ZZ {
+export class ZZBroadcast {
+  reason!: string;
+  target!: number;
+
+  constructor(input: {
+    reason: string;
+    target?: number;
+  }) {
+    this.reason = input.reason;
+    this.target = input.target ?? -1;
+  }
+}
+
+
+export class ZZRequest {
   reason!: string;
   target!: number;
 
@@ -1284,285 +1338,285 @@ export class decryptor {
 
 
 export const c2sSchemas = {
-  HI: HISchema,
-  ID: IDClientSchema,
   askchaa: askchaaSchema,
+  CC: CCSchema,
+  CH: CHSchema,
+  CT: CTRequestSchema,
+  DE: DESchema,
+  EE: EESchema,
+  HI: HISchema,
+  HP: HPRequestSchema,
+  ID: IDClientSchema,
+  MA: MASchema,
+  MC: MCRequestSchema,
+  MS: MSRequestSchema,
+  PE: PESchema,
   RC: RCSchema,
   RD: RDSchema,
   RM: RMSchema,
-  CH: CHSchema,
-  CC: CCSchema,
-  CT: CTRequestSchema,
-  MC: MCRequestSchema,
-  MS: MSRequestSchema,
-  DE: DESchema,
-  EE: EESchema,
-  PE: PESchema,
-  MA: MASchema,
+  RT: RTRequestSchema,
   VS_FRAME: VS_FRAMESchema,
   VS_JOIN: VS_JOINRequestSchema,
   VS_LEAVE: VS_LEAVERequestSchema,
   VS_SPEAK: VS_SPEAKRequestSchema,
-  HP: HPSchema,
-  RT: RTSchema,
-  ZZ: ZZSchema,
+  ZZ: ZZRequestSchema,
 } as const;
 
 export const s2cSchemas = {
-  decryptor: decryptorSchema,
-  ID: IDServerSchema,
-  SI: SISchema,
-  DONE: DONESchema,
-  CHECK: CHECKSchema,
-  PV: PVSchema,
-  BB: BBSchema,
-  CT: CTBroadcastSchema,
-  MC: MCBroadcastSchema,
-  MS: MSBroadcastSchema,
-  SP: SPSchema,
-  JD: JDSchema,
-  TI: TISchema,
-  BN: BNSchema,
+  ARUP: ARUPSchema,
   ASS: ASSSchema,
   AUTH: AUTHSchema,
-  ARUP: ARUPSchema,
-  SM: SMSchema,
-  FM: FMSchema,
+  BB: BBSchema,
+  BD: BDSchema,
+  BN: BNSchema,
+  CharsCheck: CharsCheckSchema,
+  CHECK: CHECKSchema,
+  CI: CISchema,
+  CT: CTBroadcastSchema,
+  decryptor: decryptorSchema,
+  DONE: DONESchema,
+  EI: EISchema,
+  EM: EMSchema,
   FA: FASchema,
   FL: FLSchema,
-  SC: SCSchema,
-  CharsCheck: CharsCheckSchema,
-  CI: CISchema,
-  EM: EMSchema,
-  EI: EISchema,
+  FM: FMSchema,
+  HP: HPBroadcastSchema,
+  ID: IDServerSchema,
+  JD: JDSchema,
+  KB: KBSchema,
+  KK: KKSchema,
   LE: LESchema,
-  RMC: RMCSchema,
+  MC: MCBroadcastSchema,
+  MS: MSBroadcastSchema,
   PN: PNSchema,
   PR: PRSchema,
   PU: PUSchema,
-  BD: BDSchema,
-  KB: KBSchema,
-  KK: KKSchema,
+  PV: PVSchema,
+  RMC: RMCSchema,
+  RT: RTBroadcastSchema,
+  SC: SCSchema,
+  SI: SISchema,
+  SM: SMSchema,
+  SP: SPSchema,
+  TI: TISchema,
   VS_AUDIO: VS_AUDIOSchema,
   VS_CAPS: VS_CAPSSchema,
-  VS_PEERS: VS_PEERSSchema,
   VS_JOIN: VS_JOINBroadcastSchema,
   VS_LEAVE: VS_LEAVEBroadcastSchema,
+  VS_PEERS: VS_PEERSSchema,
   VS_SPEAK: VS_SPEAKBroadcastSchema,
-  HP: HPSchema,
-  RT: RTSchema,
-  ZZ: ZZSchema,
+  ZZ: ZZBroadcastSchema,
 } as const;
 
 export const c2sClasses = {
-  HI: HI,
-  ID: IDClient,
   askchaa: askchaa,
+  CC: CC,
+  CH: CH,
+  CT: CTRequest,
+  DE: DE,
+  EE: EE,
+  HI: HI,
+  HP: HPRequest,
+  ID: IDClient,
+  MA: MA,
+  MC: MCRequest,
+  MS: MSRequest,
+  PE: PE,
   RC: RC,
   RD: RD,
   RM: RM,
-  CH: CH,
-  CC: CC,
-  CT: CTRequest,
-  MC: MCRequest,
-  MS: MSRequest,
-  DE: DE,
-  EE: EE,
-  PE: PE,
-  MA: MA,
+  RT: RTRequest,
   VS_FRAME: VS_FRAME,
   VS_JOIN: VS_JOINRequest,
   VS_LEAVE: VS_LEAVERequest,
   VS_SPEAK: VS_SPEAKRequest,
-  HP: HP,
-  RT: RT,
-  ZZ: ZZ,
+  ZZ: ZZRequest,
 } as const;
 
 export const s2cClasses = {
-  decryptor: decryptor,
-  ID: IDServer,
-  SI: SI,
-  DONE: DONE,
-  CHECK: CHECK,
-  PV: PV,
-  BB: BB,
-  CT: CTBroadcast,
-  MC: MCBroadcast,
-  MS: MSBroadcast,
-  SP: SP,
-  JD: JD,
-  TI: TI,
-  BN: BN,
+  ARUP: ARUP,
   ASS: ASS,
   AUTH: AUTH,
-  ARUP: ARUP,
-  SM: SM,
-  FM: FM,
+  BB: BB,
+  BD: BD,
+  BN: BN,
+  CharsCheck: CharsCheck,
+  CHECK: CHECK,
+  CI: CI,
+  CT: CTBroadcast,
+  decryptor: decryptor,
+  DONE: DONE,
+  EI: EI,
+  EM: EM,
   FA: FA,
   FL: FL,
-  SC: SC,
-  CharsCheck: CharsCheck,
-  CI: CI,
-  EM: EM,
-  EI: EI,
+  FM: FM,
+  HP: HPBroadcast,
+  ID: IDServer,
+  JD: JD,
+  KB: KB,
+  KK: KK,
   LE: LE,
-  RMC: RMC,
+  MC: MCBroadcast,
+  MS: MSBroadcast,
   PN: PN,
   PR: PR,
   PU: PU,
-  BD: BD,
-  KB: KB,
-  KK: KK,
+  PV: PV,
+  RMC: RMC,
+  RT: RTBroadcast,
+  SC: SC,
+  SI: SI,
+  SM: SM,
+  SP: SP,
+  TI: TI,
   VS_AUDIO: VS_AUDIO,
   VS_CAPS: VS_CAPS,
-  VS_PEERS: VS_PEERS,
   VS_JOIN: VS_JOINBroadcast,
   VS_LEAVE: VS_LEAVEBroadcast,
+  VS_PEERS: VS_PEERS,
   VS_SPEAK: VS_SPEAKBroadcast,
-  HP: HP,
-  RT: RT,
-  ZZ: ZZ,
+  ZZ: ZZBroadcast,
 } as const;
 
 export type C2SInputs = {
-  HI: ConstructorParameters<typeof HI>[0];
-  ID: ConstructorParameters<typeof IDClient>[0];
   askchaa: ConstructorParameters<typeof askchaa>[0];
+  CC: ConstructorParameters<typeof CC>[0];
+  CH: ConstructorParameters<typeof CH>[0];
+  CT: ConstructorParameters<typeof CTRequest>[0];
+  DE: ConstructorParameters<typeof DE>[0];
+  EE: ConstructorParameters<typeof EE>[0];
+  HI: ConstructorParameters<typeof HI>[0];
+  HP: ConstructorParameters<typeof HPRequest>[0];
+  ID: ConstructorParameters<typeof IDClient>[0];
+  MA: ConstructorParameters<typeof MA>[0];
+  MC: ConstructorParameters<typeof MCRequest>[0];
+  MS: ConstructorParameters<typeof MSRequest>[0];
+  PE: ConstructorParameters<typeof PE>[0];
   RC: ConstructorParameters<typeof RC>[0];
   RD: ConstructorParameters<typeof RD>[0];
   RM: ConstructorParameters<typeof RM>[0];
-  CH: ConstructorParameters<typeof CH>[0];
-  CC: ConstructorParameters<typeof CC>[0];
-  CT: ConstructorParameters<typeof CTRequest>[0];
-  MC: ConstructorParameters<typeof MCRequest>[0];
-  MS: ConstructorParameters<typeof MSRequest>[0];
-  DE: ConstructorParameters<typeof DE>[0];
-  EE: ConstructorParameters<typeof EE>[0];
-  PE: ConstructorParameters<typeof PE>[0];
-  MA: ConstructorParameters<typeof MA>[0];
+  RT: ConstructorParameters<typeof RTRequest>[0];
   VS_FRAME: ConstructorParameters<typeof VS_FRAME>[0];
   VS_JOIN: ConstructorParameters<typeof VS_JOINRequest>[0];
   VS_LEAVE: ConstructorParameters<typeof VS_LEAVERequest>[0];
   VS_SPEAK: ConstructorParameters<typeof VS_SPEAKRequest>[0];
-  HP: ConstructorParameters<typeof HP>[0];
-  RT: ConstructorParameters<typeof RT>[0];
-  ZZ: ConstructorParameters<typeof ZZ>[0];
+  ZZ: ConstructorParameters<typeof ZZRequest>[0];
 };
 
 export type S2CInputs = {
-  decryptor: ConstructorParameters<typeof decryptor>[0];
-  ID: ConstructorParameters<typeof IDServer>[0];
-  SI: ConstructorParameters<typeof SI>[0];
-  DONE: ConstructorParameters<typeof DONE>[0];
-  CHECK: ConstructorParameters<typeof CHECK>[0];
-  PV: ConstructorParameters<typeof PV>[0];
-  BB: ConstructorParameters<typeof BB>[0];
-  CT: ConstructorParameters<typeof CTBroadcast>[0];
-  MC: ConstructorParameters<typeof MCBroadcast>[0];
-  MS: ConstructorParameters<typeof MSBroadcast>[0];
-  SP: ConstructorParameters<typeof SP>[0];
-  JD: ConstructorParameters<typeof JD>[0];
-  TI: ConstructorParameters<typeof TI>[0];
-  BN: ConstructorParameters<typeof BN>[0];
+  ARUP: ConstructorParameters<typeof ARUP>[0];
   ASS: ConstructorParameters<typeof ASS>[0];
   AUTH: ConstructorParameters<typeof AUTH>[0];
-  ARUP: ConstructorParameters<typeof ARUP>[0];
-  SM: ConstructorParameters<typeof SM>[0];
-  FM: ConstructorParameters<typeof FM>[0];
+  BB: ConstructorParameters<typeof BB>[0];
+  BD: ConstructorParameters<typeof BD>[0];
+  BN: ConstructorParameters<typeof BN>[0];
+  CharsCheck: ConstructorParameters<typeof CharsCheck>[0];
+  CHECK: ConstructorParameters<typeof CHECK>[0];
+  CI: ConstructorParameters<typeof CI>[0];
+  CT: ConstructorParameters<typeof CTBroadcast>[0];
+  decryptor: ConstructorParameters<typeof decryptor>[0];
+  DONE: ConstructorParameters<typeof DONE>[0];
+  EI: ConstructorParameters<typeof EI>[0];
+  EM: ConstructorParameters<typeof EM>[0];
   FA: ConstructorParameters<typeof FA>[0];
   FL: ConstructorParameters<typeof FL>[0];
-  SC: ConstructorParameters<typeof SC>[0];
-  CharsCheck: ConstructorParameters<typeof CharsCheck>[0];
-  CI: ConstructorParameters<typeof CI>[0];
-  EM: ConstructorParameters<typeof EM>[0];
-  EI: ConstructorParameters<typeof EI>[0];
+  FM: ConstructorParameters<typeof FM>[0];
+  HP: ConstructorParameters<typeof HPBroadcast>[0];
+  ID: ConstructorParameters<typeof IDServer>[0];
+  JD: ConstructorParameters<typeof JD>[0];
+  KB: ConstructorParameters<typeof KB>[0];
+  KK: ConstructorParameters<typeof KK>[0];
   LE: ConstructorParameters<typeof LE>[0];
-  RMC: ConstructorParameters<typeof RMC>[0];
+  MC: ConstructorParameters<typeof MCBroadcast>[0];
+  MS: ConstructorParameters<typeof MSBroadcast>[0];
   PN: ConstructorParameters<typeof PN>[0];
   PR: ConstructorParameters<typeof PR>[0];
   PU: ConstructorParameters<typeof PU>[0];
-  BD: ConstructorParameters<typeof BD>[0];
-  KB: ConstructorParameters<typeof KB>[0];
-  KK: ConstructorParameters<typeof KK>[0];
+  PV: ConstructorParameters<typeof PV>[0];
+  RMC: ConstructorParameters<typeof RMC>[0];
+  RT: ConstructorParameters<typeof RTBroadcast>[0];
+  SC: ConstructorParameters<typeof SC>[0];
+  SI: ConstructorParameters<typeof SI>[0];
+  SM: ConstructorParameters<typeof SM>[0];
+  SP: ConstructorParameters<typeof SP>[0];
+  TI: ConstructorParameters<typeof TI>[0];
   VS_AUDIO: ConstructorParameters<typeof VS_AUDIO>[0];
   VS_CAPS: ConstructorParameters<typeof VS_CAPS>[0];
-  VS_PEERS: ConstructorParameters<typeof VS_PEERS>[0];
   VS_JOIN: ConstructorParameters<typeof VS_JOINBroadcast>[0];
   VS_LEAVE: ConstructorParameters<typeof VS_LEAVEBroadcast>[0];
+  VS_PEERS: ConstructorParameters<typeof VS_PEERS>[0];
   VS_SPEAK: ConstructorParameters<typeof VS_SPEAKBroadcast>[0];
-  HP: ConstructorParameters<typeof HP>[0];
-  RT: ConstructorParameters<typeof RT>[0];
-  ZZ: ConstructorParameters<typeof ZZ>[0];
+  ZZ: ConstructorParameters<typeof ZZBroadcast>[0];
 };
 
 export type C2SOutputs = {
-  HI: HI;
-  ID: IDClient;
   askchaa: askchaa;
+  CC: CC;
+  CH: CH;
+  CT: CTRequest;
+  DE: DE;
+  EE: EE;
+  HI: HI;
+  HP: HPRequest;
+  ID: IDClient;
+  MA: MA;
+  MC: MCRequest;
+  MS: MSRequest;
+  PE: PE;
   RC: RC;
   RD: RD;
   RM: RM;
-  CH: CH;
-  CC: CC;
-  CT: CTRequest;
-  MC: MCRequest;
-  MS: MSRequest;
-  DE: DE;
-  EE: EE;
-  PE: PE;
-  MA: MA;
+  RT: RTRequest;
   VS_FRAME: VS_FRAME;
   VS_JOIN: VS_JOINRequest;
   VS_LEAVE: VS_LEAVERequest;
   VS_SPEAK: VS_SPEAKRequest;
-  HP: HP;
-  RT: RT;
-  ZZ: ZZ;
+  ZZ: ZZRequest;
 };
 
 export type S2COutputs = {
-  decryptor: decryptor;
-  ID: IDServer;
-  SI: SI;
-  DONE: DONE;
-  CHECK: CHECK;
-  PV: PV;
-  BB: BB;
-  CT: CTBroadcast;
-  MC: MCBroadcast;
-  MS: MSBroadcast;
-  SP: SP;
-  JD: JD;
-  TI: TI;
-  BN: BN;
+  ARUP: ARUP;
   ASS: ASS;
   AUTH: AUTH;
-  ARUP: ARUP;
-  SM: SM;
-  FM: FM;
+  BB: BB;
+  BD: BD;
+  BN: BN;
+  CharsCheck: CharsCheck;
+  CHECK: CHECK;
+  CI: CI;
+  CT: CTBroadcast;
+  decryptor: decryptor;
+  DONE: DONE;
+  EI: EI;
+  EM: EM;
   FA: FA;
   FL: FL;
-  SC: SC;
-  CharsCheck: CharsCheck;
-  CI: CI;
-  EM: EM;
-  EI: EI;
+  FM: FM;
+  HP: HPBroadcast;
+  ID: IDServer;
+  JD: JD;
+  KB: KB;
+  KK: KK;
   LE: LE;
-  RMC: RMC;
+  MC: MCBroadcast;
+  MS: MSBroadcast;
   PN: PN;
   PR: PR;
   PU: PU;
-  BD: BD;
-  KB: KB;
-  KK: KK;
+  PV: PV;
+  RMC: RMC;
+  RT: RTBroadcast;
+  SC: SC;
+  SI: SI;
+  SM: SM;
+  SP: SP;
+  TI: TI;
   VS_AUDIO: VS_AUDIO;
   VS_CAPS: VS_CAPS;
-  VS_PEERS: VS_PEERS;
   VS_JOIN: VS_JOINBroadcast;
   VS_LEAVE: VS_LEAVEBroadcast;
+  VS_PEERS: VS_PEERS;
   VS_SPEAK: VS_SPEAKBroadcast;
-  HP: HP;
-  RT: RT;
-  ZZ: ZZ;
+  ZZ: ZZBroadcast;
 };

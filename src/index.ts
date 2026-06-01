@@ -49,11 +49,14 @@ export {
 // `instanceof`) and the type (for handler signatures).
 export {
   ARUP, ASS, AUTH, BB, BD, BN, CC, CH, CHECK, CharsCheck, CI,
-  DE, DONE, EE, EI, EM, FA, FL, FM, HI, HP, JD,
-  KB, KK, LE, MA, PE, PN, PR, PU, PV, RC, RD, RM, RMC, RT,
-  SC, SI, SM, SP, TI, VS_AUDIO, VS_CAPS, VS_FRAME, VS_PEERS, ZZ,
+  DE, DONE, EE, EI, EM, FA, FL, FM, HI, JD,
+  KB, KK, LE, MA, PE, PN, PR, PU, PV, RC, RD, RM, RMC,
+  SC, SI, SM, SP, TI, VS_AUDIO, VS_CAPS, VS_FRAME, VS_PEERS,
   askchaa, decryptor,
   IDServer, IDClient,
+  HPRequest, HPBroadcast,
+  RTRequest, RTBroadcast,
+  ZZRequest, ZZBroadcast,
   MCBroadcast, MCRequest,
   MSBroadcast, MSRequest,
   CTBroadcast, CTRequest,
