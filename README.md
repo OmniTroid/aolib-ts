@@ -181,7 +181,7 @@ Two emote encodings normalize to one `CharEmote[]` (per the
 The parser prefers blocks and falls back to the banks.
 
 Each `CharEmote` carries `{ id, key, name, anim, preanim, modifier,
-deskMod, sound, soundDelay }`, where `key` is the stable identity (block
+deskMod, sound, soundDelayMs }`, where `key` is the stable identity (block
 name, or the stringified id for legacy) and `preanim` is null when the
 emote has none. Section and key *names* are matched case-insensitively
 (authors mix `[Options]` and `[options]`); values are preserved as

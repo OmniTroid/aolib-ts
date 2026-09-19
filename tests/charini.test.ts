@@ -42,7 +42,7 @@ number = 2
       modifier: 1,
       deskMod: null,
       sound: "0",
-      soundDelay: null,
+      soundDelayMs: null,
     });
   });
 
@@ -55,7 +55,7 @@ number = 2
   it("zips [SoundN]/[SoundT] onto the matching emote id", () => {
     const { emotes } = parseCharIni(ini);
     expect(emotes[1]?.sound).toBe("objection");
-    expect(emotes[1]?.soundDelay).toBe(600); // 10 ticks * 60ms
+    expect(emotes[1]?.soundDelayMs).toBe(600); // 10 ticks * 60ms
   });
 
   it("exposes typed options", () => {
@@ -187,7 +187,7 @@ describe("parseCharIni: real-world edge cases", () => {
     const { emotes } = parseCharIni(
       "[emotions]\nnumber = 1\n1 = a#-#a#0\n[soundt]\n1 = 3 \n",
     );
-    expect(emotes[0]?.soundDelay).toBe(180); // 3 ticks * 60ms
+    expect(emotes[0]?.soundDelayMs).toBe(180); // 3 ticks * 60ms
   });
 
   it("keeps named [Time] keys in sections, not emotes", () => {
@@ -314,7 +314,7 @@ number = 2
 anim    = objection.vmd
 preanim = point.vmd
 sound   = objection.opus
-sounddelay = 480
+sounddelayms = 480
 modifier = 5
 deskmod = 1
 
@@ -334,7 +334,7 @@ anim = think_loop.vmd
       modifier: 5,
       deskMod: 1,
       sound: "objection.opus",
-      soundDelay: 480,
+      soundDelayMs: 480,
     });
   });
 
@@ -349,7 +349,7 @@ anim = think_loop.vmd
       modifier: 0,
       deskMod: null,
       sound: null,
-      soundDelay: null,
+      soundDelayMs: null,
     });
   });
 
@@ -452,7 +452,7 @@ describe("parseCharIni: example fixtures", () => {
       preanim: "point",
       modifier: 5,
       sound: "point",
-      soundDelay: 480, // 8 ticks * 60ms
+      soundDelayMs: 480, // 8 ticks * 60ms
     });
     expect(emotes[0]?.preanim).toBeNull();
   });
@@ -469,7 +469,7 @@ describe("parseCharIni: example fixtures", () => {
       modifier: 5,
       deskMod: 1,
       sound: "objection.opus",
-      soundDelay: 480,
+      soundDelayMs: 480,
     });
   });
 });

@@ -34,7 +34,7 @@ import { DeskModifier, EmoteModifier } from "../generated/enums";
 
 // One AO tick in milliseconds: the message text update interval that
 // drives sound/preanim timing (LemmyAO's `UPDATE_INTERVAL`). Legacy
-// `[soundt]` is expressed in ticks; `soundDelay` is normalized to ms.
+// `[soundt]` is expressed in ticks; `soundDelayMs` is normalized to ms.
 const TICK_MS = 60;
 
 /** Case-insensitive enum-name -> value map, so a field can write
@@ -70,7 +70,7 @@ export interface CharEmote {
    * filename with extension; null when none. */
   sound: string | null;
   /** Sound delay in milliseconds, or null. */
-  soundDelay: number | null;
+  soundDelayMs: number | null;
 }
 
 /** `[options]` block. Common keys are typed; the rest stay on the index. */
@@ -233,8 +233,8 @@ function readBlockEmotes(
           ? parseEnum(block.deskmod, DESKMOD_NAMES)
           : null,
       sound,
-      soundDelay:
-        block.sounddelay !== undefined ? toInt(block.sounddelay, 0) : null,
+      soundDelayMs:
+        block.sounddelayms !== undefined ? toInt(block.sounddelayms, 0) : null,
     });
   }
   return emotes;
@@ -266,7 +266,7 @@ function readLegacyEmotes(
       deskMod: parts.length > 4 ? parseEnum(parts[4], DESKMOD_NAMES) : null,
       sound: normSound(soundN[String(id)]),
       // [soundt] is in ticks; normalize to milliseconds.
-      soundDelay: delay !== undefined ? toInt(delay, 0) * TICK_MS : null,
+      soundDelayMs: delay !== undefined ? toInt(delay, 0) * TICK_MS : null,
     });
   }
   return emotes;
