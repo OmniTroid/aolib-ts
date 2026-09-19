@@ -27,6 +27,16 @@ spec'd as a hardcoded `0` but webAO has historically sent the player
 ID there. The library emits the spec value; the comment records the
 historical drift.
 
+## Requirements
+
+The library ships as raw TypeScript and imports its JSON schemas
+directly, so it runs under [bun](https://bun.sh) or any bundler that
+resolves `.ts` and JSON imports. Plain Node cannot load it as-is.
+
+```sh
+bun add aolib-ts
+```
+
 ## Usage
 
 The library is used the same way on both sides of the wire. The unit
@@ -132,7 +142,7 @@ Packet classes are re-exported for handler signatures and `instanceof`
 checks — the class name *is* the type name:
 
 ```ts
-import { aolib, MSBroadcast, PV } from "aolib";
+import { aolib, MSBroadcast, PV } from "aolib-ts";
 
 function handleChatMessage(packet: MSBroadcast) { /* ... */ }
 session.on.MS(handleChatMessage);
