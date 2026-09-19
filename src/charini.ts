@@ -121,11 +121,27 @@ function normSound(value: string | undefined): string | null {
 }
 
 /**
+ * Enforce the block-format rule that file references carry an extension.
+ * Legacy stems are exempt; only `[emote <name>]` blocks call this.
+ */
+function requireExtension(value: string, field: string, key: string): void {
+  if (!/\.[^.\s]+$/.test(value)) {
+    throw new Error(
+      `char.ini emote "${key}": ${field} "${value}" must include a file extension`,
+    );
+  }
+}
+
+/**
  * Parse char.ini text into a typed {@link CharIni}.
  *
  * Missing `[options]` keys default to empty strings so the shape is
  * stable. Emotes are read for ids `1..number`; ids without a definition
  * are skipped rather than emitted as blanks.
+ *
+ * Throws when a `[emote <name>]` block references an animation or sound
+ * without a file extension (the block format requires real filenames).
+ * The legacy stem encoding is read leniently and never throws.
  */
 export function parseCharIni(data: string): CharIni {
   // `;` is the canonical INI comment; `//` shows up in real char.ini
@@ -196,18 +212,27 @@ function readBlockEmotes(
     if (key === undefined) continue;
 
     const block = sections[`emote ${key.toLowerCase()}`] ?? {};
+
+    // The block format requires real filenames — reject bare stems.
+    const anim = block.anim ?? "";
+    requireExtension(anim, "anim", key);
+    const preanim = normPreanim(block.preanim);
+    if (preanim !== null) requireExtension(preanim, "preanim", key);
+    const sound = normSound(block.sound);
+    if (sound !== null) requireExtension(sound, "sound", key);
+
     emotes.push({
       id,
       key,
       name: block.name ?? key,
-      anim: block.anim ?? "",
-      preanim: normPreanim(block.preanim),
+      anim,
+      preanim,
       modifier: parseEnum(block.modifier, MODIFIER_NAMES),
       deskMod:
         block.deskmod !== undefined
           ? parseEnum(block.deskmod, DESKMOD_NAMES)
           : null,
-      sound: normSound(block.sound),
+      sound,
       soundDelay:
         block.sounddelay !== undefined ? toInt(block.sounddelay, 0) : null,
     });

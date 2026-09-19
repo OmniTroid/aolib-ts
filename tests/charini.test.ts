@@ -355,7 +355,7 @@ anim = think_loop.vmd
 
   it("lets `name =` override the display label", () => {
     const { emotes } = parseCharIni(
-      "[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj\nname = Objection!\n",
+      "[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj.gif\nname = Objection!\n",
     );
     expect(emotes[0]?.key).toBe("obj");
     expect(emotes[0]?.name).toBe("Objection!");
@@ -363,26 +363,26 @@ anim = think_loop.vmd
 
   it("matches block sections case-insensitively", () => {
     const { emotes } = parseCharIni(
-      "[Emotions]\nnumber = 1\n1 = Wave\n[Emote Wave]\nAnim = wave\n",
+      "[Emotions]\nnumber = 1\n1 = Wave\n[Emote Wave]\nAnim = wave.gif\n",
     );
-    expect(emotes[0]?.anim).toBe("wave");
+    expect(emotes[0]?.anim).toBe("wave.gif");
   });
 
   it("ignores legacy #-records once any block exists", () => {
     // A file mixing the two: blocks win, so the `#` value is treated as a
     // block name (no such block), not split into legacy fields.
     const { emotes } = parseCharIni(
-      "[emotions]\nnumber = 1\n1 = real\n[emote real]\nanim = real\n",
+      "[emotions]\nnumber = 1\n1 = real\n[emote real]\nanim = real.gif\n",
     );
-    expect(emotes[0]?.anim).toBe("real");
+    expect(emotes[0]?.anim).toBe("real.gif");
   });
 
   it("accepts a named EmoteModifier in the block `modifier` field", () => {
     const { emotes } = parseCharIni(
       "[emotions]\nnumber = 3\n1 = a\n2 = b\n3 = c\n" +
-        "[emote a]\nanim = a\nmodifier = zoom\n" +
-        "[emote b]\nanim = b\nmodifier = OBJECTION_ZOOM\n" +
-        "[emote c]\nanim = c\nmodifier = 1\n",
+        "[emote a]\nanim = a.gif\nmodifier = zoom\n" +
+        "[emote b]\nanim = b.gif\nmodifier = OBJECTION_ZOOM\n" +
+        "[emote c]\nanim = c.gif\nmodifier = 1\n",
     );
     expect(emotes[0]?.modifier).toBe(5);
     expect(emotes[1]?.modifier).toBe(6);
@@ -392,11 +392,40 @@ anim = think_loop.vmd
   it("accepts a named DeskModifier in the block `deskmod` field", () => {
     const { emotes } = parseCharIni(
       "[emotions]\nnumber = 2\n1 = a\n2 = b\n" +
-        "[emote a]\nanim = a\ndeskmod = shown\n" +
-        "[emote b]\nanim = b\ndeskmod = show_during_preanim\n",
+        "[emote a]\nanim = a.gif\ndeskmod = shown\n" +
+        "[emote b]\nanim = b.gif\ndeskmod = show_during_preanim\n",
     );
     expect(emotes[0]?.deskMod).toBe(1);
     expect(emotes[1]?.deskMod).toBe(3);
+  });
+
+  it("rejects a block `anim` without a file extension", () => {
+    expect(() =>
+      parseCharIni("[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj\n"),
+    ).toThrow(/must include a file extension/);
+  });
+
+  it("rejects a block `preanim` without a file extension", () => {
+    expect(() =>
+      parseCharIni(
+        "[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj.gif\npreanim = point\n",
+      ),
+    ).toThrow(/preanim .* must include a file extension/);
+  });
+
+  it("rejects a block `sound` without a file extension", () => {
+    expect(() =>
+      parseCharIni(
+        "[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj.gif\nsound = boom\n",
+      ),
+    ).toThrow(/sound .* must include a file extension/);
+  });
+
+  it("still allows an absent preanim/sound in a block", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj.gif\n",
+    );
+    expect(emotes[0]).toMatchObject({ preanim: null, sound: null });
   });
 });
 
