@@ -7,10 +7,10 @@ encode/decode logic, and the typed dispatch surface. Clients see only
 typed sender functions and typed receive handlers — never wire bytes,
 positional slots, literals, or format flags.
 
-The only runtime dependency is Ajv, used to validate every packet
-against its JSON Schema on both encode and decode. The library is
-transport-agnostic: plug it into a WebSocket (or anything that ships
-strings), it does the rest.
+The runtime dependencies are Ajv, used to validate every packet against
+its JSON Schema on both encode and decode, and js-ini, the base for the
+char.ini parser. The library is transport-agnostic: plug it into a
+WebSocket (or anything that ships strings), it does the rest.
 
 ## Protocol reference
 
@@ -154,6 +154,30 @@ session.on.PV((packet) => {
 
 Inbound packets are rehydrated as instances of their generated class
 before the handler runs, so `instanceof` works out of the box.
+
+### char.ini
+
+`parseCharIni(text)` reads a character's `char.ini` asset into a typed
+`CharIni`. char.ini is INI-shaped, but its emote records are
+`#`-delimited (`normal#-#idle#1`), which most INI libraries truncate by
+treating `#` as an inline comment — so the base parse leaves `#` out of
+the comment set, then a tuning pass folds the flat sections into
+structure.
+
+```ts
+import { parseCharIni } from "aolib-ts";
+
+const char = parseCharIni(text);
+char.options.showname;   // typed [options] block (values verbatim)
+char.emotes;             // [Emotions] zipped with [SoundN]/[SoundT]
+char.sections;           // every section, for blocks not modelled above
+```
+
+Each `CharEmote` carries `{ id, name, preanim, anim, modifier, deskMod,
+sound, soundDelay }`. Section and key *names* are matched
+case-insensitively (authors mix `[Options]` and `[options]`); values are
+preserved as written, so lowercase at the point of use if you build
+case-insensitive asset URLs.
 
 ## Folder structure
 

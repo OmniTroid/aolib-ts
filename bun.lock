@@ -6,6 +6,7 @@
       "name": "aolib-ts",
       "dependencies": {
         "ajv": "^8.20.0",
+        "js-ini": "^1.6.0",
       },
       "devDependencies": {
         "@eslint/js": "^9.18.0",
@@ -158,6 +159,8 @@
     "is-glob": ["is-glob@4.0.3", "", { "dependencies": { "is-extglob": "^2.1.1" } }, "sha512-xelSayHH36ZgE7ZWhli7pW34hNbNl8Ojv5KVmkJD4hBdD3th8Tfk9vYasLM+mXWOZhFkgZfxhLSnrwRr4elSSg=="],
 
     "isexe": ["isexe@2.0.0", "", {}, "sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw=="],
+
+    "js-ini": ["js-ini@1.6.0", "", {}, "sha512-9Vx+NVkMRNY4i7pLLIGdXIQbP1iwB3fP2IG1zMCgeUUvR1ODmTKa33eR/J9FHoorNsfoJr9/2SVqeSKLwPD9Nw=="],
 
     "js-yaml": ["js-yaml@4.1.1", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA=="],
 

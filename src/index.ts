@@ -81,3 +81,14 @@ export {
   registerCodec,
 } from "./fanta";
 export type { JsonSchema, FantaCodec } from "./types";
+
+// ---------------------------------------------------------------------
+// Asset formats.
+// ---------------------------------------------------------------------
+
+export {
+  parseCharIni,
+  type CharIni,
+  type CharIniOptions,
+  type CharEmote,
+} from "./charini";

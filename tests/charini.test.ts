@@ -1,0 +1,281 @@
+import { describe, it, expect } from "bun:test";
+import { parseCharIni } from "../src/charini";
+
+// ---------------------------------------------------------------------
+// The AO-specific quirk: emote values are `#`-delimited, so the parser
+// must not treat `#` as an inline comment.
+// ---------------------------------------------------------------------
+
+describe("parseCharIni: emote records survive the `#` delimiter", () => {
+  const ini = `
+[options]
+name = Fenomeno3D
+showname = Fenomeno
+side = wit
+gender = male
+blips = male
+chat = default
+
+[emotions]
+number = 2
+1 = normal#-#idle#1
+2 = deskslam#slam#normal#5#1
+
+[soundn]
+1 = 0
+2 = objection
+
+[soundt]
+2 = 10
+`;
+
+  it("keeps every `#`-delimited field", () => {
+    const { emotes } = parseCharIni(ini);
+    expect(emotes).toHaveLength(2);
+    expect(emotes[0]).toEqual({
+      id: 1,
+      name: "normal",
+      preanim: "-",
+      anim: "idle",
+      modifier: 1,
+      deskMod: null,
+      sound: "0",
+      soundDelay: null,
+    });
+  });
+
+  it("reads the optional 5th field as deskMod", () => {
+    const { emotes } = parseCharIni(ini);
+    expect(emotes[1]?.deskMod).toBe(1);
+    expect(emotes[1]?.modifier).toBe(5);
+  });
+
+  it("zips [SoundN]/[SoundT] onto the matching emote id", () => {
+    const { emotes } = parseCharIni(ini);
+    expect(emotes[1]?.sound).toBe("objection");
+    expect(emotes[1]?.soundDelay).toBe(10);
+  });
+
+  it("exposes typed options", () => {
+    const { options } = parseCharIni(ini);
+    expect(options.name).toBe("Fenomeno3D");
+    expect(options.showname).toBe("Fenomeno");
+    expect(options.side).toBe("wit");
+  });
+});
+
+// ---------------------------------------------------------------------
+// Tuning: case-insensitive sections/keys, defaults, comments.
+// ---------------------------------------------------------------------
+
+describe("parseCharIni: tuning", () => {
+  it("matches sections and keys case-insensitively", () => {
+    const { options, emotes } = parseCharIni(`
+[Options]
+Name = Phoenix
+ShowName = Phoenix Wright
+
+[Emotions]
+Number = 1
+1 = point#-#point#5
+`);
+    expect(options.name).toBe("Phoenix");
+    expect(options.showname).toBe("Phoenix Wright");
+    expect(emotes).toHaveLength(1);
+  });
+
+  it("preserves value case (only names are lowercased)", () => {
+    const { options } = parseCharIni(`
+[options]
+showname = MATT
+side = WIT
+`);
+    expect(options.showname).toBe("MATT");
+    expect(options.side).toBe("WIT");
+  });
+
+  it("fills missing options with empty-string defaults", () => {
+    const { options } = parseCharIni(`
+[options]
+name = Bare
+`);
+    expect(options.showname).toBe("");
+    expect(options.category).toBe("");
+  });
+
+  it("ignores `;` comments but never `#`", () => {
+    const { options, emotes } = parseCharIni(`
+[options]
+; this is a comment
+name = Withcomment
+
+[emotions]
+number = 1
+1 = a#b#c#0
+`);
+    expect(options.name).toBe("Withcomment");
+    expect(emotes[0]?.anim).toBe("c");
+  });
+
+  it("skips emote ids that have no definition", () => {
+    const { emotes } = parseCharIni(`
+[emotions]
+number = 3
+1 = one#-#one#0
+3 = three#-#three#0
+`);
+    expect(emotes.map((e) => e.id)).toEqual([1, 3]);
+  });
+
+  it("keeps unmodeled sections in `sections`", () => {
+    const { sections } = parseCharIni(`
+[shouts]
+holdit = Hold it!!
+`);
+    expect(sections.shouts?.holdit).toBe("Hold it!!");
+  });
+
+  it("returns empty options/emotes for empty input", () => {
+    const { options, emotes } = parseCharIni("");
+    expect(emotes).toEqual([]);
+    expect(options.name).toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------
+// Edge cases drawn from real char.ini files on public bases (empty emote
+// names, `//` comments, tab separators, named [Time] keys, etc.).
+// ---------------------------------------------------------------------
+
+describe("parseCharIni: real-world edge cases", () => {
+  it("leaves deskMod null when the emote has only 4 fields", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = normal#pre#normal#0\n",
+    );
+    expect(emotes[0]?.deskMod).toBeNull();
+  });
+
+  it("reads a trailing empty deskMod field as 0", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = #-#void#0#\n",
+    );
+    expect(emotes[0]).toMatchObject({ name: "", anim: "void", deskMod: 0 });
+  });
+
+  it("ignores `//` line comments (used to disable an option)", () => {
+    const { options } = parseCharIni(
+      "[options]\nname = Aether\n// chat = genshin\n",
+    );
+    expect(options.chat).toBe("");
+    expect(Object.keys(options)).not.toContain("// chat");
+  });
+
+  it("parses tab-separated `key<tab>= value`", () => {
+    const { options } = parseCharIni("[options]\ngender\t = male\n");
+    expect(options.gender).toBe("male");
+  });
+
+  it("parses `key=value` with no surrounding spaces", () => {
+    const { options } = parseCharIni("[options]\nname=Abigail\nblips=Female\n");
+    expect(options.name).toBe("Abigail");
+    expect(options.blips).toBe("Female");
+  });
+
+  it("trims trailing whitespace from values", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = a#-#a#0\n[soundt]\n1 = 3 \n",
+    );
+    expect(emotes[0]?.soundDelay).toBe(3);
+  });
+
+  it("keeps named [Time] keys in sections, not emotes", () => {
+    const { emotes, sections } = parseCharIni(
+      "[time]\npre-smh = 0\npre-shout = 0\n[emotions]\nnumber = 1\n1 = a#-#a#0\n",
+    );
+    expect(emotes).toHaveLength(1);
+    expect(sections.time?.["pre-smh"]).toBe("0");
+  });
+
+  it("preserves emote names containing spaces", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = Book Worried Down#-#bWorriedDown#0#0\n",
+    );
+    expect(emotes[0]?.name).toBe("Book Worried Down");
+  });
+
+  it("keeps a numeric emote name as a string", () => {
+    const { emotes } = parseCharIni("[emotions]\nnumber = 1\n1 = 1#-#1#0#1\n");
+    expect(emotes[0]?.name).toBe("1");
+  });
+
+  it("keeps a named sound and nulls a missing one", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 2\n1 = a#-#a#0\n2 = b#-#b#0\n[soundn]\n1 = et-objection\n",
+    );
+    expect(emotes[0]?.sound).toBe("et-objection");
+    expect(emotes[1]?.sound).toBeNull();
+  });
+
+  it("strips a UTF-8 BOM before the first section", () => {
+    const { options, emotes } = parseCharIni(
+      "﻿[options]\nname = Boom\n[emotions]\nnumber = 1\n1 = a#-#a#0\n",
+    );
+    expect(options.name).toBe("Boom");
+    expect(emotes).toHaveLength(1);
+  });
+
+  it("ignores emote lines beyond the declared number", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = a#-#a#0\n2 = b#-#b#0\n",
+    );
+    expect(emotes.map((e) => e.id)).toEqual([1]);
+  });
+
+  it("defaults a non-numeric modifier to 0", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = a#-#a#x\n",
+    );
+    expect(emotes[0]?.modifier).toBe(0);
+  });
+
+  it("handles CRLF line endings", () => {
+    const { options, emotes } = parseCharIni(
+      "[options]\r\nname = CRLF\r\n[emotions]\r\nnumber = 1\r\n1 = a#-#a#0\r\n",
+    );
+    expect(options.name).toBe("CRLF");
+    expect(emotes[0]?.anim).toBe("a");
+  });
+
+  it("tolerates stray free-text lines without throwing", () => {
+    // Real files contain author notes on their own line.
+    const { options } = parseCharIni(
+      "[options]\nname = Note\nwhy are you reading the ini lmao\nshowname = Note\n",
+    );
+    expect(options.name).toBe("Note");
+    expect(options.showname).toBe("Note");
+  });
+
+  it("tolerates `#`-led header lines mid-file", () => {
+    const { emotes } = parseCharIni(
+      "# Comment#Preanimation#Animation#Modifier\n[emotions]\nnumber = 1\n1 = a#-#a#0\n",
+    );
+    expect(emotes).toHaveLength(1);
+  });
+
+  it("degrades to empty options on a malformed [options] header", () => {
+    // e.g. `+[Options]` or `Options]` seen in the wild.
+    const { options, emotes } = parseCharIni(
+      "+[Options]\nname = Broken\n[emotions]\nnumber = 1\n1 = a#-#a#0\n",
+    );
+    expect(options.name).toBe("");
+    expect(emotes).toHaveLength(1);
+  });
+
+  it("keeps the last of duplicate emote ids", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = first#-#first#0\n1 = second#-#second#0\n",
+    );
+    expect(emotes).toHaveLength(1);
+    expect(emotes[0]?.anim).toBe("second");
+  });
+});
