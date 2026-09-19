@@ -57,15 +57,17 @@ export interface CharEmote {
   key: string;
   /** Display label shown on the emote button. */
   name: string;
-  /** Animation base name (2D sprite stem or 3D base VMD stem). */
+  /** Animation: a legacy stem, or (in `[emote]` blocks) the full
+   * filename with extension. */
   anim: string;
-  /** Pre-animation base name, or null when none (`-` in the file). */
+  /** Pre-animation (same form as `anim`), or null when none (`-`). */
   preanim: string | null;
   /** AO emote modifier (0 = none, 1 = play preanim, 5/6 = zoom). */
   modifier: number;
   /** Desk modifier when specified, else null. */
   deskMod: number | null;
-  /** Sound-effect name for this emote, or null. */
+  /** Sound effect: a legacy stem, or (in `[emote]` blocks) the full
+   * filename with extension; null when none. */
   sound: string | null;
   /** Sound delay in milliseconds, or null. */
   soundDelay: number | null;

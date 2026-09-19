@@ -311,15 +311,15 @@ number = 2
 2 = think
 
 [emote objection]
-anim    = objection
-preanim = point
-sound   = objection
+anim    = objection.vmd
+preanim = point.vmd
+sound   = objection.opus
 sounddelay = 480
 modifier = 5
 deskmod = 1
 
 [emote think]
-anim = think_loop
+anim = think_loop.vmd
 `;
 
   it("resolves emotes from their blocks in button order", () => {
@@ -329,11 +329,11 @@ anim = think_loop
       id: 1,
       key: "objection",
       name: "objection",
-      anim: "objection",
-      preanim: "point",
+      anim: "objection.vmd",
+      preanim: "point.vmd",
       modifier: 5,
       deskMod: 1,
-      sound: "objection",
+      sound: "objection.opus",
       soundDelay: 480,
     });
   });
@@ -344,7 +344,7 @@ anim = think_loop
       id: 2,
       key: "think",
       name: "think",
-      anim: "think_loop",
+      anim: "think_loop.vmd",
       preanim: null,
       modifier: 0,
       deskMod: null,
@@ -435,11 +435,11 @@ describe("parseCharIni: example fixtures", () => {
     expect(emotes[1]).toMatchObject({
       key: "objection",
       name: "objection",
-      anim: "objection",
-      preanim: "point",
+      anim: "objection.vmd",
+      preanim: "point.vmd",
       modifier: 5,
       deskMod: 1,
-      sound: "objection",
+      sound: "objection.opus",
       soundDelay: 480,
     });
   });
