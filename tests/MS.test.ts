@@ -31,29 +31,29 @@ describe("MS: enum values round-trip", () => {
     character: "Phoenix",
     emote: "normal",
     message: "Objection!",
-    side: Side.DEFENSE,
+    side: Side.defense,
     char_id: 1,
   };
 
   it("DeskModifier maps to its underlying integer on the wire", () => {
     const fanta = encode(
       MSRequest,
-      { ...minimal, desk_modifier: DeskModifier.HIDE_DURING_PREANIM },
+      { ...minimal, desk_modifier: DeskModifier.hide_during_preanim },
       "fanta",
     );
     // Slot 0 (after `MS#`) holds the desk_modifier value, `2`.
     expect(fanta.startsWith("MS#2#")).toBe(true);
     const decoded = decode(MSRequest, fanta) as unknown as MSRequestType;
-    expect(decoded.desk_modifier).toBe(DeskModifier.HIDE_DURING_PREANIM);
+    expect(decoded.desk_modifier).toBe(DeskModifier.hide_during_preanim);
   });
 
   it("EmoteModifier round-trips for every enum value", () => {
     for (const v of [
-      EmoteModifier.NO_PREANIM,
-      EmoteModifier.PREANIM,
-      EmoteModifier.PREANIM_AND_OBJECTION,
-      EmoteModifier.ZOOM,
-      EmoteModifier.OBJECTION_ZOOM,
+      EmoteModifier.no_preanim,
+      EmoteModifier.preanim,
+      EmoteModifier.preanim_and_objection,
+      EmoteModifier.zoom,
+      EmoteModifier.objection_zoom,
     ]) {
       const w = encode(MSRequest, { ...minimal, emote_modifier: v }, "fanta");
       expect((decode(MSRequest, w) as unknown as MSRequestType).emote_modifier).toBe(v);
@@ -62,11 +62,11 @@ describe("MS: enum values round-trip", () => {
 
   it("ShoutModifier round-trips for every enum value", () => {
     for (const v of [
-      ShoutModifier.NONE,
-      ShoutModifier.HOLD_IT,
-      ShoutModifier.OBJECTION,
-      ShoutModifier.TAKE_THAT,
-      ShoutModifier.CUSTOM,
+      ShoutModifier.none,
+      ShoutModifier.hold_it,
+      ShoutModifier.objection,
+      ShoutModifier.take_that,
+      ShoutModifier.custom,
     ]) {
       const w = encode(MSRequest, { ...minimal, shout_modifier: v }, "fanta");
       expect((decode(MSRequest, w) as unknown as MSRequestType).shout_modifier).toBe(v);
@@ -74,7 +74,7 @@ describe("MS: enum values round-trip", () => {
   });
 
   it("Flip round-trips", () => {
-    for (const v of [Flip.NONE, Flip.HORIZONTAL, Flip.VERTICAL, Flip.HORIZONTAL_AND_VERTICAL]) {
+    for (const v of [Flip.none, Flip.horizontal, Flip.vertical, Flip.horizontal_and_vertical]) {
       const w = encode(MSRequest, { ...minimal, flip: v }, "fanta");
       expect((decode(MSRequest, w) as unknown as MSRequestType).flip).toBe(v);
     }
@@ -82,9 +82,9 @@ describe("MS: enum values round-trip", () => {
 
   it("TextColor round-trips for every enum value", () => {
     for (const v of [
-      TextColor.WHITE, TextColor.GREEN, TextColor.RED, TextColor.ORANGE,
-      TextColor.BLUE, TextColor.YELLOW, TextColor.PINK, TextColor.CYAN,
-      TextColor.GREY, TextColor.RAINBOW,
+      TextColor.white, TextColor.green, TextColor.red, TextColor.orange,
+      TextColor.blue, TextColor.yellow, TextColor.pink, TextColor.cyan,
+      TextColor.grey, TextColor.rainbow,
     ]) {
       const w = encode(MSRequest, { ...minimal, text_color: v }, "fanta");
       expect((decode(MSRequest, w) as unknown as MSRequestType).text_color).toBe(v);
@@ -93,9 +93,9 @@ describe("MS: enum values round-trip", () => {
 
   it("Side carries the 3-letter wire value", () => {
     for (const v of [
-      Side.DEFENSE, Side.PROSECUTION, Side.DEFENSE_HELPER,
-      Side.PROSECUTION_HELPER, Side.WITNESS, Side.JUDGE, Side.JURY,
-      Side.SEANCE,
+      Side.defense, Side.prosecution, Side.defense_helper,
+      Side.prosecution_helper, Side.witness, Side.judge, Side.jury,
+      Side.seance,
     ]) {
       const w = encode(MSRequest, { ...minimal, side: v }, "fanta");
       // Slot 5 (after `MS#`) holds side.
@@ -117,7 +117,7 @@ describe("MS: minimal-input encoding fills every default", () => {
         character: "Phoenix",
         emote: "normal",
         message: "Hello",
-        side: Side.WITNESS,
+        side: Side.witness,
         char_id: 5,
       },
       "fanta",
@@ -136,28 +136,28 @@ describe("MS: minimal-input encoding fills every default", () => {
         character: "Phoenix",
         emote: "normal",
         message: "Hello",
-        side: Side.WITNESS,
+        side: Side.witness,
         char_id: 5,
       },
       "fanta",
     );
     const decoded = decode(MSRequest, wire) as unknown as MSRequestType;
     expect(decoded).toMatchObject({
-      desk_modifier: DeskModifier.SHOWN,
+      desk_modifier: DeskModifier.shown,
       preanim: "",
       character: "Phoenix",
       emote: "normal",
       message: "Hello",
-      side: Side.WITNESS,
+      side: Side.witness,
       sfx_name: "",
-      emote_modifier: EmoteModifier.NO_PREANIM,
+      emote_modifier: EmoteModifier.no_preanim,
       char_id: 5,
       sfx_delay: 0,
-      shout_modifier: ShoutModifier.NONE,
+      shout_modifier: ShoutModifier.none,
       evidence_id: 0,
-      flip: Flip.NONE,
+      flip: Flip.none,
       realization: false,
-      text_color: TextColor.WHITE,
+      text_color: TextColor.white,
       showname: "",
       paired_charid: -1,
       offset: { x: 0, y: 0 },
@@ -185,7 +185,7 @@ describe("MS: offset codec", () => {
         character: "Phoenix",
         emote: "normal",
         message: "hi",
-        side: Side.WITNESS,
+        side: Side.witness,
         char_id: 0,
         offset: { x: 50, y: -20 },
       },
@@ -206,7 +206,7 @@ describe("MS: offset codec", () => {
         character: "Phoenix",
         emote: "normal",
         message: "hi",
-        side: Side.WITNESS,
+        side: Side.witness,
         char_id: 0,
         offset: { x: 50, y: -20 },
       },
@@ -224,7 +224,7 @@ describe("MS: offset codec", () => {
         character: "Phoenix",
         emote: "normal",
         message: "hi",
-        side: Side.WITNESS,
+        side: Side.witness,
         char_id: 0,
         offset: { x: 50, y: -20 },
       },
@@ -241,7 +241,7 @@ describe("MS: offset codec", () => {
         character: "Phoenix",
         emote: "normal",
         message: "hi",
-        side: Side.WITNESS,
+        side: Side.witness,
         char_id: 0,
         offset: { x: 50, y: -20 },
       },
@@ -266,7 +266,7 @@ describe("MS: request vs broadcast shape divergence", () => {
         character: "Phoenix",
         emote: "normal",
         message: "hi",
-        side: Side.WITNESS,
+        side: Side.witness,
         char_id: 1,
       },
       "fanta",
@@ -282,7 +282,7 @@ describe("MS: request vs broadcast shape divergence", () => {
         character: "Phoenix",
         emote: "normal",
         message: "hi",
-        side: Side.WITNESS,
+        side: Side.witness,
         char_id: 1,
       },
       "fanta",
@@ -297,12 +297,12 @@ describe("MS: request vs broadcast shape divergence", () => {
         character: "Phoenix",
         emote: "normal",
         message: "I am paired",
-        side: Side.WITNESS,
+        side: Side.witness,
         char_id: 1,
         paired_name: "Edgeworth",
         paired_emote: "smirk",
         paired_offset: { x: 100, y: 0 },
-        paired_flip: Flip.HORIZONTAL,
+        paired_flip: Flip.horizontal,
       },
       "fanta",
     );
@@ -310,7 +310,7 @@ describe("MS: request vs broadcast shape divergence", () => {
     expect(decoded.paired_name).toBe("Edgeworth");
     expect(decoded.paired_emote).toBe("smirk");
     expect(decoded.paired_offset).toEqual({ x: 100, y: 0 });
-    expect(decoded.paired_flip).toBe(Flip.HORIZONTAL);
+    expect(decoded.paired_flip).toBe(Flip.horizontal);
   });
 
   it("missing required field on the wire throws (cast guards the boundary)", () => {
@@ -332,7 +332,7 @@ describe("MS: chat-meta in user fields round-trips", () => {
       character: "Phoenix",
       emote: "normal",
       message: "100% sure & #1 takes $5",
-      side: Side.WITNESS,
+      side: Side.witness,
       char_id: 1,
     };
     const wire = encode(MSRequest, p, "fanta");
@@ -345,7 +345,7 @@ describe("MS: chat-meta in user fields round-trips", () => {
       character: "Phoenix",
       emote: "normal",
       message: "hi",
-      side: Side.WITNESS,
+      side: Side.witness,
       char_id: 1,
       showname: "Wright & Co.",
     };
@@ -364,28 +364,28 @@ describe("MS: chat-meta in user fields round-trips", () => {
 describe("MS: JSON envelope round-trip", () => {
   it("MSBroadcast: all fields preserved", () => {
     const p: ConstructorParameters<typeof MSBroadcastClass>[0] = {
-      desk_modifier: DeskModifier.SHOWN,
+      desk_modifier: DeskModifier.shown,
       preanim: "phoenix-confident",
       character: "Phoenix",
       emote: "normal",
       message: "Objection!",
-      side: Side.DEFENSE,
+      side: Side.defense,
       sfx_name: "objection.opus",
-      emote_modifier: EmoteModifier.PREANIM_AND_OBJECTION,
+      emote_modifier: EmoteModifier.preanim_and_objection,
       char_id: 5,
       sfx_delay: 0,
-      shout_modifier: ShoutModifier.OBJECTION,
+      shout_modifier: ShoutModifier.objection,
       evidence_id: 3,
-      flip: Flip.NONE,
+      flip: Flip.none,
       realization: false,
-      text_color: TextColor.RED,
+      text_color: TextColor.red,
       showname: "Phoenix Wright",
       paired_charid: -1,
       paired_name: "",
       paired_emote: "",
       offset: { x: 0, y: 0 },
       paired_offset: { x: 0, y: 0 },
-      paired_flip: Flip.NONE,
+      paired_flip: Flip.none,
       noninterrupting_preanim: false,
       sfx_looping: false,
       screenshake: false,
@@ -405,16 +405,16 @@ describe("MS: JSON envelope round-trip", () => {
       character: "Phoenix",
       emote: "normal",
       message: "Objection!",
-      side: Side.PROSECUTION,
+      side: Side.prosecution,
       char_id: 7,
-      shout_modifier: ShoutModifier.HOLD_IT,
-      text_color: TextColor.BLUE,
+      shout_modifier: ShoutModifier.hold_it,
+      text_color: TextColor.blue,
     };
     const json = encode(MSRequest, p, "json");
     const decoded = decode(MSRequest, json) as unknown as MSRequestType;
-    expect(decoded.side).toBe(Side.PROSECUTION);
-    expect(decoded.shout_modifier).toBe(ShoutModifier.HOLD_IT);
-    expect(decoded.text_color).toBe(TextColor.BLUE);
+    expect(decoded.side).toBe(Side.prosecution);
+    expect(decoded.shout_modifier).toBe(ShoutModifier.hold_it);
+    expect(decoded.text_color).toBe(TextColor.blue);
   });
 });
 
@@ -430,7 +430,7 @@ describe("MS: session integration", () => {
       character: "Phoenix",
       emote: "normal",
       message: "hi",
-      side: Side.WITNESS,
+      side: Side.witness,
       char_id: 1,
     });
     expect(out.length).toBe(1);
@@ -451,7 +451,7 @@ describe("MS: session integration", () => {
         character: "Edgeworth",
         emote: "normal",
         message: "I object",
-        side: Side.PROSECUTION,
+        side: Side.prosecution,
         char_id: 2,
         paired_name: "Phoenix",
         paired_emote: "stunned",
@@ -472,7 +472,7 @@ describe("MS: session integration", () => {
       character: "Phoenix",
       emote: "normal",
       message: "broadcast",
-      side: Side.WITNESS,
+      side: Side.witness,
       char_id: 1,
       paired_name: "Edgeworth",
       paired_offset: { x: 50, y: 0 },
@@ -493,7 +493,7 @@ describe("MS: session integration", () => {
         character: "Phoenix",
         emote: "normal",
         message: "from client",
-        side: Side.DEFENSE,
+        side: Side.defense,
         char_id: 5,
       },
       "fanta",
@@ -511,17 +511,17 @@ describe("MS: session integration", () => {
 
 describe("MS: isFullView()", () => {
   it("is true for DEFENSE, PROSECUTION, WITNESS", () => {
-    expect(isFullView(Side.DEFENSE)).toBe(true);
-    expect(isFullView(Side.PROSECUTION)).toBe(true);
-    expect(isFullView(Side.WITNESS)).toBe(true);
+    expect(isFullView(Side.defense)).toBe(true);
+    expect(isFullView(Side.prosecution)).toBe(true);
+    expect(isFullView(Side.witness)).toBe(true);
   });
 
   it("is false for everything else", () => {
-    expect(isFullView(Side.JUDGE)).toBe(false);
-    expect(isFullView(Side.JURY)).toBe(false);
-    expect(isFullView(Side.SEANCE)).toBe(false);
-    expect(isFullView(Side.DEFENSE_HELPER)).toBe(false);
-    expect(isFullView(Side.PROSECUTION_HELPER)).toBe(false);
+    expect(isFullView(Side.judge)).toBe(false);
+    expect(isFullView(Side.jury)).toBe(false);
+    expect(isFullView(Side.seance)).toBe(false);
+    expect(isFullView(Side.defense_helper)).toBe(false);
+    expect(isFullView(Side.prosecution_helper)).toBe(false);
   });
 });
 
@@ -533,10 +533,10 @@ describe("MS: type derivation", () => {
   it("In<MSRequest>.side is Side; Out<MSRequest>.side is Side", () => {
     // The point of this test is the TypeScript types; if it
     // compiles, we're good. Runtime is trivial.
-    const sideIn: MSRequestType["side"] = Side.WITNESS;
+    const sideIn: MSRequestType["side"] = Side.witness;
     const offIn: MSRequestType["offset"] | undefined = undefined;
     const off: Offset = { x: 1, y: 2 };
-    expect(sideIn).toBe(Side.WITNESS);
+    expect(sideIn).toBe(Side.witness);
     expect(offIn).toBeUndefined();
     expect(off).toEqual({ x: 1, y: 2 });
   });

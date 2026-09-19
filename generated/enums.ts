@@ -2,72 +2,72 @@
 
 /** Discriminator for ARUP payloads: 0 = player counts (numbers), 1/2/3 = area metadata strings. */
 export enum AreaUpdateType {
-  PLAYER_COUNT = 0,
-  STATUS = 1,
-  CASE_MANAGER = 2,
-  LOCKED = 3,
+  player_count = 0,
+  status = 1,
+  case_manager = 2,
+  locked = 3,
 }
 
 /** Desk visibility behavior. */
 export enum DeskModifier {
-  HIDDEN = 0,
-  SHOWN = 1,
-  HIDE_DURING_PREANIM = 2,
-  SHOW_DURING_PREANIM = 3,
-  HIDE_AND_CENTER_DURING_PREANIM = 4,
-  SHOW_DURING_PREANIM_THEN_CENTER = 5,
+  hidden = 0,
+  shown = 1,
+  hide_during_preanim = 2,
+  show_during_preanim = 3,
+  hide_and_center_during_preanim = 4,
+  show_during_preanim_then_center = 5,
 }
 
 /** Emote behavior selector. Spec values 3 and 4 are documented as unused. */
 export enum EmoteModifier {
-  NO_PREANIM = 0,
-  PREANIM = 1,
-  PREANIM_AND_OBJECTION = 2,
-  UNUSED_3 = 3,
-  UNUSED_4 = 4,
-  ZOOM = 5,
-  OBJECTION_ZOOM = 6,
+  no_preanim = 0,
+  preanim = 1,
+  preanim_and_objection = 2,
+  unused_3 = 3,
+  unused_4 = 4,
+  zoom = 5,
+  objection_zoom = 6,
 }
 
 /** Sprite mirroring. */
 export enum Flip {
-  NONE = 0,
-  HORIZONTAL = 1,
-  VERTICAL = 2,
-  HORIZONTAL_AND_VERTICAL = 3,
+  none = 0,
+  horizontal = 1,
+  vertical = 2,
+  horizontal_and_vertical = 3,
 }
 
 /** Shout / objection selector. */
 export enum ShoutModifier {
-  NONE = 0,
-  HOLD_IT = 1,
-  OBJECTION = 2,
-  TAKE_THAT = 3,
-  CUSTOM = 4,
+  none = 0,
+  hold_it = 1,
+  objection = 2,
+  take_that = 3,
+  custom = 4,
 }
 
 /** Character position. Wire values are the lowercase 3-letter codes. */
 export enum Side {
-  DEFENSE = "def",
-  PROSECUTION = "pro",
-  DEFENSE_HELPER = "hld",
-  PROSECUTION_HELPER = "hlp",
-  WITNESS = "wit",
-  JUDGE = "jud",
-  JURY = "jur",
-  SEANCE = "sea",
+  defense = "def",
+  prosecution = "pro",
+  defense_helper = "hld",
+  prosecution_helper = "hlp",
+  witness = "wit",
+  judge = "jud",
+  jury = "jur",
+  seance = "sea",
 }
 
-/** Chat message text color. `BLUE` also disables the talking animation. */
+/** Chat message text color. `blue` also disables the talking animation. */
 export enum TextColor {
-  WHITE = 0,
-  GREEN = 1,
-  RED = 2,
-  ORANGE = 3,
-  BLUE = 4,
-  YELLOW = 5,
-  PINK = 6,
-  CYAN = 7,
-  GREY = 8,
-  RAINBOW = 9,
+  white = 0,
+  green = 1,
+  red = 2,
+  orange = 3,
+  blue = 4,
+  yellow = 5,
+  pink = 6,
+  cyan = 7,
+  grey = 8,
+  rainbow = 9,
 }

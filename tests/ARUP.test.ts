@@ -15,12 +15,12 @@ describe("ARUP: update_type discriminates payload", () => {
   it("PLAYER_COUNT carries numbers on the wire", () => {
     const wire = encode(
       ARUP,
-      { update_type: AreaUpdateType.PLAYER_COUNT, update_data: [3, 7, 0] },
+      { update_type: AreaUpdateType.player_count, update_data: [3, 7, 0] },
       "fanta",
     );
     expect(wire).toBe("ARUP#0#3#7#0#%");
     const decoded = decode(ARUP, wire) as unknown as ARUPType;
-    expect(decoded.update_type).toBe(AreaUpdateType.PLAYER_COUNT);
+    expect(decoded.update_type).toBe(AreaUpdateType.player_count);
     expect(decoded.update_data).toEqual([3, 7, 0]);
   });
 
@@ -28,14 +28,14 @@ describe("ARUP: update_type discriminates payload", () => {
     const wire = encode(
       ARUP,
       {
-        update_type: AreaUpdateType.STATUS,
+        update_type: AreaUpdateType.status,
         update_data: ["normal", "casing", "battle"],
       },
       "fanta",
     );
     expect(wire).toBe("ARUP#1#normal#casing#battle#%");
     const decoded = decode(ARUP, wire) as unknown as ARUPType;
-    expect(decoded.update_type).toBe(AreaUpdateType.STATUS);
+    expect(decoded.update_type).toBe(AreaUpdateType.status);
     expect(decoded.update_data).toEqual(["normal", "casing", "battle"]);
   });
 
@@ -43,13 +43,13 @@ describe("ARUP: update_type discriminates payload", () => {
     const wire = encode(
       ARUP,
       {
-        update_type: AreaUpdateType.CASE_MANAGER,
+        update_type: AreaUpdateType.case_manager,
         update_data: ["Phoenix Wright", "", "Edgeworth"],
       },
       "fanta",
     );
     expect(decode(ARUP, wire)).toEqual({
-      update_type: AreaUpdateType.CASE_MANAGER,
+      update_type: AreaUpdateType.case_manager,
       update_data: ["Phoenix Wright", "", "Edgeworth"],
     });
   });
@@ -58,13 +58,13 @@ describe("ARUP: update_type discriminates payload", () => {
     const wire = encode(
       ARUP,
       {
-        update_type: AreaUpdateType.LOCKED,
+        update_type: AreaUpdateType.locked,
         update_data: ["FREE", "LOCKED", "SPECTATABLE"],
       },
       "fanta",
     );
     expect(decode(ARUP, wire)).toEqual({
-      update_type: AreaUpdateType.LOCKED,
+      update_type: AreaUpdateType.locked,
       update_data: ["FREE", "LOCKED", "SPECTATABLE"],
     });
   });
@@ -84,7 +84,7 @@ describe("ARUP: chat-escape on string payloads", () => {
     ];
     const wire = encode(
       ARUP,
-      { update_type: AreaUpdateType.CASE_MANAGER, update_data: names },
+      { update_type: AreaUpdateType.case_manager, update_data: names },
       "fanta",
     );
     const decoded = decode(ARUP, wire) as unknown as ARUPType;
@@ -95,7 +95,7 @@ describe("ARUP: chat-escape on string payloads", () => {
     const wire = encode(
       ARUP,
       {
-        update_type: AreaUpdateType.STATUS,
+        update_type: AreaUpdateType.status,
         update_data: ["a & b"],
       },
       "fanta",
@@ -108,7 +108,7 @@ describe("ARUP: chat-escape on string payloads", () => {
   it("PLAYER_COUNT data is not escaped (just numbers)", () => {
     const wire = encode(
       ARUP,
-      { update_type: AreaUpdateType.PLAYER_COUNT, update_data: [12, 0, 5] },
+      { update_type: AreaUpdateType.player_count, update_data: [12, 0, 5] },
       "fanta",
     );
     expect(wire).toBe("ARUP#0#12#0#5#%");
@@ -123,13 +123,13 @@ describe("ARUP: edge cases", () => {
   it("zero-length payload is allowed", () => {
     const wire = encode(
       ARUP,
-      { update_type: AreaUpdateType.PLAYER_COUNT, update_data: [] as number[] },
+      { update_type: AreaUpdateType.player_count, update_data: [] as number[] },
       "fanta",
     );
     expect(wire).toBe("ARUP#0#%");
     const decoded = decode(ARUP, wire) as unknown as ARUPType;
     expect(decoded).toEqual({
-      update_type: AreaUpdateType.PLAYER_COUNT,
+      update_type: AreaUpdateType.player_count,
       update_data: [],
     });
   });
@@ -155,7 +155,7 @@ describe("ARUP: JSON envelope", () => {
   it("PLAYER_COUNT encodes as a JSON object with number[] payload", () => {
     const json = encode(
       ARUP,
-      { update_type: AreaUpdateType.PLAYER_COUNT, update_data: [3, 7] },
+      { update_type: AreaUpdateType.player_count, update_data: [3, 7] },
       "json",
     );
     expect(JSON.parse(json)).toEqual({
@@ -169,7 +169,7 @@ describe("ARUP: JSON envelope", () => {
     const json = encode(
       ARUP,
       {
-        update_type: AreaUpdateType.STATUS,
+        update_type: AreaUpdateType.status,
         update_data: ["normal", "battle"],
       },
       "json",
@@ -183,10 +183,10 @@ describe("ARUP: JSON envelope", () => {
 
   it("JSON round-trips for every update_type", () => {
     const cases: { update_type: AreaUpdateType; update_data: AreaUpdateData }[] = [
-      { update_type: AreaUpdateType.PLAYER_COUNT, update_data: [10, 20, 30] },
-      { update_type: AreaUpdateType.STATUS, update_data: ["normal", "casing"] },
-      { update_type: AreaUpdateType.CASE_MANAGER, update_data: ["Phoenix"] },
-      { update_type: AreaUpdateType.LOCKED, update_data: ["FREE"] },
+      { update_type: AreaUpdateType.player_count, update_data: [10, 20, 30] },
+      { update_type: AreaUpdateType.status, update_data: ["normal", "casing"] },
+      { update_type: AreaUpdateType.case_manager, update_data: ["Phoenix"] },
+      { update_type: AreaUpdateType.locked, update_data: ["FREE"] },
     ];
     for (const c of cases) {
       expect(decode(ARUP, encode(ARUP, c, "json"))).toEqual(c);
@@ -207,7 +207,7 @@ describe("ARUP: session integration", () => {
     });
     s.receive("ARUP#1#normal#battle#%");
     expect(received).toEqual({
-      update_type: AreaUpdateType.STATUS,
+      update_type: AreaUpdateType.status,
       update_data: ["normal", "battle"],
     });
   });

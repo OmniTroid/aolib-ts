@@ -169,15 +169,24 @@ import { parseCharIni } from "aolib-ts";
 
 const char = parseCharIni(text);
 char.options.showname;   // typed [options] block (values verbatim)
-char.emotes;             // [Emotions] zipped with [SoundN]/[SoundT]
+char.options.model;      // set => 3D character
+char.emotes;             // normalized emote table, in button order
 char.sections;           // every section, for blocks not modelled above
 ```
 
-Each `CharEmote` carries `{ id, name, preanim, anim, modifier, deskMod,
-sound, soundDelay }`. Section and key *names* are matched
-case-insensitively (authors mix `[Options]` and `[options]`); values are
-preserved as written, so lowercase at the point of use if you build
-case-insensitive asset URLs.
+Two emote encodings normalize to one `CharEmote[]` (per the
+[`CharIni` spec](./aolib-meta/schemas/assets/README.md)): the preferred
+`[emote <name>]` blocks, and the legacy `#`-delimited
+`[Emotions]`/`[SoundN]`/`[SoundT]` banks used when no block is present.
+The parser prefers blocks and falls back to the banks.
+
+Each `CharEmote` carries `{ id, key, name, anim, preanim, modifier,
+deskMod, sound, soundDelay }`, where `key` is the stable identity (block
+name, or the stringified id for legacy) and `preanim` is null when the
+emote has none. Section and key *names* are matched case-insensitively
+(authors mix `[Options]` and `[options]`); values are preserved as
+written, so lowercase at the point of use if you build case-insensitive
+asset URLs.
 
 ## Folder structure
 

@@ -31,4 +31,4 @@ export type AreaUpdateData = number[] | string[];
  * choosing between single-character and paired-character rendering.
  */
 export const isFullView = (s: Side): boolean =>
-  s === Side.DEFENSE || s === Side.PROSECUTION || s === Side.WITNESS;
+  s === Side.defense || s === Side.prosecution || s === Side.witness;

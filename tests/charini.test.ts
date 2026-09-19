@@ -1,4 +1,5 @@
 import { describe, it, expect } from "bun:test";
+import { readFileSync } from "node:fs";
 import { parseCharIni } from "../src/charini";
 
 // ---------------------------------------------------------------------
@@ -34,8 +35,9 @@ number = 2
     expect(emotes).toHaveLength(2);
     expect(emotes[0]).toEqual({
       id: 1,
+      key: "1",
       name: "normal",
-      preanim: "-",
+      preanim: null,
       anim: "idle",
       modifier: 1,
       deskMod: null,
@@ -53,7 +55,7 @@ number = 2
   it("zips [SoundN]/[SoundT] onto the matching emote id", () => {
     const { emotes } = parseCharIni(ini);
     expect(emotes[1]?.sound).toBe("objection");
-    expect(emotes[1]?.soundDelay).toBe(10);
+    expect(emotes[1]?.soundDelay).toBe(600); // 10 ticks * 60ms
   });
 
   it("exposes typed options", () => {
@@ -185,7 +187,7 @@ describe("parseCharIni: real-world edge cases", () => {
     const { emotes } = parseCharIni(
       "[emotions]\nnumber = 1\n1 = a#-#a#0\n[soundt]\n1 = 3 \n",
     );
-    expect(emotes[0]?.soundDelay).toBe(3);
+    expect(emotes[0]?.soundDelay).toBe(180); // 3 ticks * 60ms
   });
 
   it("keeps named [Time] keys in sections, not emotes", () => {
@@ -277,5 +279,168 @@ describe("parseCharIni: real-world edge cases", () => {
     );
     expect(emotes).toHaveLength(1);
     expect(emotes[0]?.anim).toBe("second");
+  });
+
+  it("normalizes a legacy `-` preanim to null and keys by id", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 2\n1 = a#-#a#0\n2 = b#pre#b#1\n",
+    );
+    expect(emotes[0]).toMatchObject({ key: "1", preanim: null });
+    expect(emotes[1]).toMatchObject({ key: "2", preanim: "pre" });
+  });
+
+  it("reads the [options] model key (3D marker)", () => {
+    const { options } = parseCharIni("[options]\nname = Bot\nmodel = model.pmx\n");
+    expect(options.model).toBe("model.pmx");
+  });
+});
+
+// ---------------------------------------------------------------------
+// Extended spec: `[emote <name>]` blocks (preferred over legacy banks).
+// ---------------------------------------------------------------------
+
+describe("parseCharIni: [emote <name>] blocks", () => {
+  const ini = `
+[options]
+name = Bot
+model = model.pmx
+
+[emotions]
+number = 2
+1 = objection
+2 = think
+
+[emote objection]
+anim    = objection
+preanim = point
+sound   = objection
+sounddelay = 480
+modifier = 5
+deskmod = 1
+
+[emote think]
+anim = think_loop
+`;
+
+  it("resolves emotes from their blocks in button order", () => {
+    const { emotes } = parseCharIni(ini);
+    expect(emotes).toHaveLength(2);
+    expect(emotes[0]).toEqual({
+      id: 1,
+      key: "objection",
+      name: "objection",
+      anim: "objection",
+      preanim: "point",
+      modifier: 5,
+      deskMod: 1,
+      sound: "objection",
+      soundDelay: 480,
+    });
+  });
+
+  it("defaults name to the block key and leaves absent fields null", () => {
+    const { emotes } = parseCharIni(ini);
+    expect(emotes[1]).toEqual({
+      id: 2,
+      key: "think",
+      name: "think",
+      anim: "think_loop",
+      preanim: null,
+      modifier: 0,
+      deskMod: null,
+      sound: null,
+      soundDelay: null,
+    });
+  });
+
+  it("lets `name =` override the display label", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj\nname = Objection!\n",
+    );
+    expect(emotes[0]?.key).toBe("obj");
+    expect(emotes[0]?.name).toBe("Objection!");
+  });
+
+  it("matches block sections case-insensitively", () => {
+    const { emotes } = parseCharIni(
+      "[Emotions]\nnumber = 1\n1 = Wave\n[Emote Wave]\nAnim = wave\n",
+    );
+    expect(emotes[0]?.anim).toBe("wave");
+  });
+
+  it("ignores legacy #-records once any block exists", () => {
+    // A file mixing the two: blocks win, so the `#` value is treated as a
+    // block name (no such block), not split into legacy fields.
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = real\n[emote real]\nanim = real\n",
+    );
+    expect(emotes[0]?.anim).toBe("real");
+  });
+
+  it("accepts a named EmoteModifier in the block `modifier` field", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 3\n1 = a\n2 = b\n3 = c\n" +
+        "[emote a]\nanim = a\nmodifier = zoom\n" +
+        "[emote b]\nanim = b\nmodifier = OBJECTION_ZOOM\n" +
+        "[emote c]\nanim = c\nmodifier = 1\n",
+    );
+    expect(emotes[0]?.modifier).toBe(5);
+    expect(emotes[1]?.modifier).toBe(6);
+    expect(emotes[2]?.modifier).toBe(1);
+  });
+
+  it("accepts a named DeskModifier in the block `deskmod` field", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 2\n1 = a\n2 = b\n" +
+        "[emote a]\nanim = a\ndeskmod = shown\n" +
+        "[emote b]\nanim = b\ndeskmod = show_during_preanim\n",
+    );
+    expect(emotes[0]?.deskMod).toBe(1);
+    expect(emotes[1]?.deskMod).toBe(3);
+  });
+});
+
+// ---------------------------------------------------------------------
+// The committed example characters in examples/characters/, parsed from
+// disk (a real on-disk regression, not an inline string).
+// ---------------------------------------------------------------------
+
+describe("parseCharIni: example fixtures", () => {
+  const read = (name: string) =>
+    parseCharIni(
+      readFileSync(`${import.meta.dir}/../examples/characters/${name}/char.ini`, "utf8"),
+    );
+
+  it("parses the legacy 2D example (defender)", () => {
+    const { options, emotes } = read("defender");
+    expect(options.showname).toBe("The Defense");
+    expect(options.model).toBe("");
+    expect(emotes).toHaveLength(3);
+    expect(emotes[1]).toMatchObject({
+      key: "2",
+      name: "Point",
+      anim: "point",
+      preanim: "point",
+      modifier: 5,
+      sound: "point",
+      soundDelay: 480, // 8 ticks * 60ms
+    });
+    expect(emotes[0]?.preanim).toBeNull();
+  });
+
+  it("parses the block-encoded 3D example (robot)", () => {
+    const { options, emotes } = read("robot");
+    expect(options.model).toBe("robot.pmx");
+    expect(emotes).toHaveLength(2);
+    expect(emotes[1]).toMatchObject({
+      key: "objection",
+      name: "objection",
+      anim: "objection",
+      preanim: "point",
+      modifier: 5,
+      deskMod: 1,
+      sound: "objection",
+      soundDelay: 480,
+    });
   });
 });
