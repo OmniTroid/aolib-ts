@@ -16,10 +16,10 @@
  *
  *   - `[emote <name>]` blocks (preferred): each `[emote <blockname>]`
  *     section carries `anim` / `preanim` / `postanim` / `camera` / `sound` /
- *     `modifier` / `deskmod` fields. `[emotions]` optionally lists the button order as
- *     `N = <blockname>`; when it lists none, every block is used in file
- *     order. In blocks `modifier`/`deskmod` must be a named enum
- *     identifier (e.g. `zoom`), never a bare number.
+ *     `modifier` / `deskmod` fields. Every block is an emote, in file order;
+ *     any block present invalidates `[emotions]` entirely (it is not read).
+ *     In blocks `modifier`/`deskmod` must be a named enum identifier
+ *     (e.g. `zoom`), never a bare number.
  *   - Legacy banks (fallback, used when no `[emote ...]` block exists):
  *     `[emotions] N = desc#preanim#anim#modifier#deskmod`, zipped with
  *     `[soundn]` and `[soundt]` by id.
@@ -207,8 +207,8 @@ export function parseCharIni(data: string): CharIni {
     }
     const name = section.toLowerCase();
     sections[name] = lower;
-    // Record `[emote <name>]` block names in file order, for the case where
-    // `[emotions]` does not enumerate them (see readBlockEmotes).
+    // Record `[emote <name>]` block names in file order; blocks are the
+    // emote list when any exists (see readBlockEmotes).
     if (name.startsWith("emote ")) blockOrder.push(section.slice(6));
   }
 
@@ -230,37 +230,28 @@ export function parseCharIni(data: string): CharIni {
   const emotionSection = sections.emotions ?? {};
   const count = toInt(emotionSection.number, 0);
 
-  // Prefer `[emote <name>]` blocks; fall back to the legacy banks only
-  // when the file carries no such block.
+  // Any `[emote <name>]` block switches to the block encoding and
+  // invalidates `[emotions]` entirely; otherwise read the legacy banks.
   const emotes =
     blockOrder.length > 0
-      ? readBlockEmotes(emotionSection, sections, count, blockOrder)
+      ? readBlockEmotes(sections, blockOrder)
       : readLegacyEmotes(emotionSection, sections, count);
 
   return { options, emotes, sections };
 }
 
 /**
- * `[emote <name>]` encoding: `[emote <blockname>]` sections carrying the emote
- * fields. `[emotions]` optionally lists the block names in button order as
- * `N = <blockname>`; when it enumerates none, every block is used in file order
- * (`blockOrder`). Either way the result is a plain list in button order.
+ * `[emote <name>]` encoding: every `[emote <blockname>]` section is an emote,
+ * in the order the blocks appear in the file. The presence of any block
+ * invalidates `[emotions]` completely — it is never consulted here, so it
+ * cannot select, reorder, or exclude blocks.
  */
 function readBlockEmotes(
-  emotionSection: Record<string, string>,
   sections: Record<string, Record<string, string>>,
-  count: number,
   blockOrder: string[],
 ): CharEmote[] {
-  const listed: string[] = [];
-  for (let id = 1; id <= count; id++) {
-    const key = emotionSection[String(id)];
-    if (key !== undefined) listed.push(key);
-  }
-  const keys = listed.length > 0 ? listed : blockOrder;
-
   const emotes: CharEmote[] = [];
-  for (const key of keys) {
+  for (const key of blockOrder) {
     const block = sections[`emote ${key.toLowerCase()}`] ?? {};
 
     // The block format requires real filenames — reject bare stems.

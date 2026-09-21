@@ -523,21 +523,15 @@ anim = think_loop.vmd
     ]);
   });
 
-  it("falls back to file order when `[emotions]` lists no blocks", () => {
+  it("ignores `[emotions]` completely once any block exists", () => {
     const { emotes } = parseCharIni(
-      "[emotions]\nnumber = 0\n[emote jog]\nanim = run16.vmd\n",
-    );
-    expect(emotes.map((e) => e.key)).toEqual(["jog"]);
-  });
-
-  it("still honors `[emotions]` order and selection when present", () => {
-    const { emotes } = parseCharIni(
+      // `[emotions]` lists only `wave`, but blocks win: both emotes, in
+      // file order (jog then wave), and the section is not consulted.
       "[emotions]\nnumber = 1\n1 = wave\n" +
         "[emote jog]\nanim = run16.vmd\n" +
         "[emote wave]\nanim = wave.vmd\n",
     );
-    // Only the listed block is an emote, despite `jog` appearing first.
-    expect(emotes.map((e) => e.key)).toEqual(["wave"]);
+    expect(emotes.map((e) => e.key)).toEqual(["jog", "wave"]);
   });
 });
 
