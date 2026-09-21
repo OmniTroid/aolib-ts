@@ -15,19 +15,18 @@
  * in aolib-meta `schemas/assets`):
  *
  *   - `[emote <name>]` blocks (preferred): each `[emote <blockname>]`
- *     section carries `anim` / `preanim` / `postanim` / `sound` /
+ *     section carries `anim` / `preanim` / `postanim` / `camera` / `sound` /
  *     `modifier` / `deskmod` fields. `[emotions]` optionally lists the button order as
  *     `N = <blockname>`; when it lists none, every block is used in file
  *     order. `modifier` takes a number or an EmoteModifier name (e.g. `zoom`).
  *   - Legacy banks (fallback, used when no `[emote ...]` block exists):
- *     `[emotions] N = desc#preanim#anim#modifier#deskMod`, zipped with
+ *     `[emotions] N = desc#preanim#anim#modifier#deskmod`, zipped with
  *     `[soundn]` and `[soundt]` by id.
  *
  * The normalized `key` is the block name (blocks) or the stringified id
- * (legacy); it is the identity `camera.json` and the animation files key
- * off. Section and key *names* are lowercased for lookup; values are
- * preserved verbatim, so lowercase at the point of use if you build
- * case-insensitive asset URLs.
+ * (legacy); it is the identity the animation files key off. Section and key
+ * *names* are lowercased for lookup; values are preserved verbatim, so
+ * lowercase at the point of use if you build case-insensitive asset URLs.
  */
 
 import { parse as parseIni } from "js-ini";
@@ -35,7 +34,7 @@ import { DeskModifier, EmoteModifier } from "../generated/enums";
 
 // One AO tick in milliseconds: the message text update interval that
 // drives sound/preanim timing (LemmyAO's `UPDATE_INTERVAL`). Legacy
-// `[soundt]` is expressed in ticks; `soundDelayMs` is normalized to ms.
+// `[soundt]` is expressed in ticks; `sounddelayms` is normalized to ms.
 const TICK_MS = 60;
 
 /** Case-insensitive enum-name -> value map, so a field can write
@@ -50,10 +49,12 @@ function nameMap(e: Record<string, string | number>): Record<string, number> {
 const MODIFIER_NAMES = nameMap(EmoteModifier);
 const DESKMOD_NAMES = nameMap(DeskModifier);
 
-/** One normalized emote, from a block or a legacy bank row. */
+/**
+ * One normalized emote, from a block or a legacy bank row. Emotes are a sorted
+ * list (button order), so position is the array index — there is no id. Only
+ * `key` and `anim` come from the file without a default.
+ */
 export interface CharEmote {
-  /** 1-based position in the emote button list. */
-  id: number;
   /** Stable identity: block name, or the stringified id for legacy. */
   key: string;
   /** Display label shown on the emote button. */
@@ -66,15 +67,18 @@ export interface CharEmote {
   /** Exit animation played when leaving this emote, before the next
    * emote's preanim (block format only; null otherwise). */
   postanim: string | null;
-  /** AO emote modifier (0 = none, 1 = play preanim, 5/6 = zoom). */
+  /** Camera-motion file (a VMD carrying a camera track) that frames this
+   * emote, or null when it uses the default camera (block format only). */
+  camera: string | null;
+  /** AO emote modifier (0 = none, 1 = play preanim, 5/6 = zoom). Default 0. */
   modifier: number;
-  /** Desk modifier when specified, else null. */
-  deskMod: number | null;
+  /** Desk modifier. Default 1 (shown) when the file omits it. */
+  deskmod: number;
   /** Sound effect: a legacy stem, or (in `[emote]` blocks) the full
    * filename with extension; null when none. */
   sound: string | null;
-  /** Sound delay in milliseconds, or null. */
-  soundDelayMs: number | null;
+  /** Sound delay in milliseconds. Default 0 when the file omits it. */
+  sounddelayms: number;
 }
 
 /** `[options]` block. Common keys are typed; the rest stay on the index. */
@@ -212,8 +216,7 @@ export function parseCharIni(data: string): CharIni {
  * `[emote <name>]` encoding: `[emote <blockname>]` sections carrying the emote
  * fields. `[emotions]` optionally lists the block names in button order as
  * `N = <blockname>`; when it enumerates none, every block is used in file order
- * (`blockOrder`). Listed blocks keep their `[emotions]` id (gaps preserved);
- * the file-order fallback numbers them 1..N.
+ * (`blockOrder`). Either way the result is a plain list in button order.
  */
 function readBlockEmotes(
   emotionSection: Record<string, string>,
@@ -221,16 +224,15 @@ function readBlockEmotes(
   count: number,
   blockOrder: string[],
 ): CharEmote[] {
-  const listed: { id: number; key: string }[] = [];
+  const listed: string[] = [];
   for (let id = 1; id <= count; id++) {
     const key = emotionSection[String(id)];
-    if (key !== undefined) listed.push({ id, key });
+    if (key !== undefined) listed.push(key);
   }
-  const entries =
-    listed.length > 0 ? listed : blockOrder.map((key, i) => ({ id: i + 1, key }));
+  const keys = listed.length > 0 ? listed : blockOrder;
 
   const emotes: CharEmote[] = [];
-  for (const { id, key } of entries) {
+  for (const key of keys) {
     const block = sections[`emote ${key.toLowerCase()}`] ?? {};
 
     // The block format requires real filenames — reject bare stems.
@@ -240,30 +242,30 @@ function readBlockEmotes(
     if (preanim !== null) requireExtension(preanim, "preanim", key);
     const postanim = normPreanim(block.postanim);
     if (postanim !== null) requireExtension(postanim, "postanim", key);
+    const camera = normPreanim(block.camera);
+    if (camera !== null) requireExtension(camera, "camera", key);
     const sound = normSound(block.sound);
     if (sound !== null) requireExtension(sound, "sound", key);
 
     emotes.push({
-      id,
       key,
       name: block.name ?? key,
       anim,
       preanim,
       postanim,
+      camera,
       modifier: parseEnum(block.modifier, MODIFIER_NAMES),
-      deskMod:
-        block.deskmod !== undefined
-          ? parseEnum(block.deskmod, DESKMOD_NAMES)
-          : null,
+      deskmod:
+        block.deskmod !== undefined ? parseEnum(block.deskmod, DESKMOD_NAMES) : 1,
       sound,
-      soundDelayMs:
-        block.sounddelayms !== undefined ? toInt(block.sounddelayms, 0) : null,
+      sounddelayms:
+        block.sounddelayms !== undefined ? toInt(block.sounddelayms, 0) : 0,
     });
   }
   return emotes;
 }
 
-/** Legacy encoding: `desc#preanim#anim#modifier#deskMod` + [soundn]/[soundt]. */
+/** Legacy encoding: `desc#preanim#anim#modifier#deskmod` + [soundn]/[soundt]. */
 function readLegacyEmotes(
   emotionSection: Record<string, string>,
   sections: Record<string, Record<string, string>>,
@@ -280,17 +282,17 @@ function readLegacyEmotes(
     const parts = def.split("#");
     const delay = soundT[String(id)];
     emotes.push({
-      id,
       key: String(id),
       name: parts[0] ?? "",
       anim: parts[2] ?? "",
       preanim: normPreanim(parts[1]),
       postanim: null,
+      camera: null,
       modifier: parseEnum(parts[3], MODIFIER_NAMES),
-      deskMod: parts.length > 4 ? parseEnum(parts[4], DESKMOD_NAMES) : null,
+      deskmod: parts.length > 4 ? parseEnum(parts[4], DESKMOD_NAMES) : 1,
       sound: normSound(soundN[String(id)]),
       // [soundt] is in ticks; normalize to milliseconds.
-      soundDelayMs: delay !== undefined ? toInt(delay, 0) * TICK_MS : null,
+      sounddelayms: delay !== undefined ? toInt(delay, 0) * TICK_MS : 0,
     });
   }
   return emotes;

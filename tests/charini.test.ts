@@ -34,29 +34,29 @@ number = 2
     const { emotes } = parseCharIni(ini);
     expect(emotes).toHaveLength(2);
     expect(emotes[0]).toEqual({
-      id: 1,
       key: "1",
       name: "normal",
       preanim: null,
       postanim: null,
+      camera: null,
       anim: "idle",
       modifier: 1,
-      deskMod: null,
+      deskmod: 1,
       sound: "0",
-      soundDelayMs: null,
+      sounddelayms: 0,
     });
   });
 
-  it("reads the optional 5th field as deskMod", () => {
+  it("reads the optional 5th field as deskmod", () => {
     const { emotes } = parseCharIni(ini);
-    expect(emotes[1]?.deskMod).toBe(1);
+    expect(emotes[1]?.deskmod).toBe(1);
     expect(emotes[1]?.modifier).toBe(5);
   });
 
   it("zips [SoundN]/[SoundT] onto the matching emote id", () => {
     const { emotes } = parseCharIni(ini);
     expect(emotes[1]?.sound).toBe("objection");
-    expect(emotes[1]?.soundDelayMs).toBe(600); // 10 ticks * 60ms
+    expect(emotes[1]?.sounddelayms).toBe(600); // 10 ticks * 60ms
   });
 
   it("exposes typed options", () => {
@@ -127,7 +127,7 @@ number = 3
 1 = one#-#one#0
 3 = three#-#three#0
 `);
-    expect(emotes.map((e) => e.id)).toEqual([1, 3]);
+    expect(emotes.map((e) => e.key)).toEqual(["1", "3"]);
   });
 
   it("keeps unmodeled sections in `sections`", () => {
@@ -151,18 +151,18 @@ holdit = Hold it!!
 // ---------------------------------------------------------------------
 
 describe("parseCharIni: real-world edge cases", () => {
-  it("leaves deskMod null when the emote has only 4 fields", () => {
+  it("defaults deskmod to 1 when the emote has only 4 fields", () => {
     const { emotes } = parseCharIni(
       "[emotions]\nnumber = 1\n1 = normal#pre#normal#0\n",
     );
-    expect(emotes[0]?.deskMod).toBeNull();
+    expect(emotes[0]?.deskmod).toBe(1);
   });
 
-  it("reads a trailing empty deskMod field as 0", () => {
+  it("reads a trailing empty deskmod field as 0", () => {
     const { emotes } = parseCharIni(
       "[emotions]\nnumber = 1\n1 = #-#void#0#\n",
     );
-    expect(emotes[0]).toMatchObject({ name: "", anim: "void", deskMod: 0 });
+    expect(emotes[0]).toMatchObject({ name: "", anim: "void", deskmod: 0 });
   });
 
   it("ignores `//` line comments (used to disable an option)", () => {
@@ -188,7 +188,7 @@ describe("parseCharIni: real-world edge cases", () => {
     const { emotes } = parseCharIni(
       "[emotions]\nnumber = 1\n1 = a#-#a#0\n[soundt]\n1 = 3 \n",
     );
-    expect(emotes[0]?.soundDelayMs).toBe(180); // 3 ticks * 60ms
+    expect(emotes[0]?.sounddelayms).toBe(180); // 3 ticks * 60ms
   });
 
   it("keeps named [Time] keys in sections, not emotes", () => {
@@ -231,7 +231,7 @@ describe("parseCharIni: real-world edge cases", () => {
     const { emotes } = parseCharIni(
       "[emotions]\nnumber = 1\n1 = a#-#a#0\n2 = b#-#b#0\n",
     );
-    expect(emotes.map((e) => e.id)).toEqual([1]);
+    expect(emotes.map((e) => e.key)).toEqual(["1"]);
   });
 
   it("defaults a non-numeric modifier to 0", () => {
@@ -315,6 +315,7 @@ number = 2
 anim    = objection.vmd
 preanim = point.vmd
 postanim = bow.vmd
+camera  = objection_cam.vmd
 sound   = objection.opus
 sounddelayms = 480
 modifier = 5
@@ -328,32 +329,32 @@ anim = think_loop.vmd
     const { emotes } = parseCharIni(ini);
     expect(emotes).toHaveLength(2);
     expect(emotes[0]).toEqual({
-      id: 1,
       key: "objection",
       name: "objection",
       anim: "objection.vmd",
       preanim: "point.vmd",
       postanim: "bow.vmd",
+      camera: "objection_cam.vmd",
       modifier: 5,
-      deskMod: 1,
+      deskmod: 1,
       sound: "objection.opus",
-      soundDelayMs: 480,
+      sounddelayms: 480,
     });
   });
 
-  it("defaults name to the block key and leaves absent fields null", () => {
+  it("defaults name to the block key and applies field defaults", () => {
     const { emotes } = parseCharIni(ini);
     expect(emotes[1]).toEqual({
-      id: 2,
       key: "think",
       name: "think",
       anim: "think_loop.vmd",
       preanim: null,
       postanim: null,
+      camera: null,
       modifier: 0,
-      deskMod: null,
+      deskmod: 1,
       sound: null,
-      soundDelayMs: null,
+      sounddelayms: 0,
     });
   });
 
@@ -399,8 +400,8 @@ anim = think_loop.vmd
         "[emote a]\nanim = a.gif\ndeskmod = shown\n" +
         "[emote b]\nanim = b.gif\ndeskmod = show_during_preanim\n",
     );
-    expect(emotes[0]?.deskMod).toBe(1);
-    expect(emotes[1]?.deskMod).toBe(3);
+    expect(emotes[0]?.deskmod).toBe(1);
+    expect(emotes[1]?.deskmod).toBe(3);
   });
 
   it("rejects a block `anim` without a file extension", () => {
@@ -456,15 +457,35 @@ anim = think_loop.vmd
     expect(emotes[0]?.postanim).toBeNull();
   });
 
+  it("reads a block `camera` (camera-motion VMD)", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj.vmd\ncamera = obj_cam.vmd\n",
+    );
+    expect(emotes[0]?.camera).toBe("obj_cam.vmd");
+  });
+
+  it("rejects a block `camera` without a file extension", () => {
+    expect(() =>
+      parseCharIni(
+        "[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj.vmd\ncamera = obj_cam\n",
+      ),
+    ).toThrow(/camera .* must include a file extension/);
+  });
+
+  it("leaves camera null for legacy emotes", () => {
+    const { emotes } = parseCharIni("[emotions]\nnumber = 1\n1 = a#-#a#0\n");
+    expect(emotes[0]?.camera).toBeNull();
+  });
+
   it("uses every block in file order when `[emotions]` is absent", () => {
     const { emotes } = parseCharIni(
       "[options]\nmodel = model.pmx\n" +
         "[emote jog]\nanim = run16.vmd\n" +
         "[emote wave]\nanim = wave.vmd\n",
     );
-    expect(emotes.map((e) => ({ id: e.id, key: e.key, anim: e.anim }))).toEqual([
-      { id: 1, key: "jog", anim: "run16.vmd" },
-      { id: 2, key: "wave", anim: "wave.vmd" },
+    expect(emotes.map((e) => ({ key: e.key, anim: e.anim }))).toEqual([
+      { key: "jog", anim: "run16.vmd" },
+      { key: "wave", anim: "wave.vmd" },
     ]);
   });
 
@@ -509,7 +530,7 @@ describe("parseCharIni: example fixtures", () => {
       preanim: "point",
       modifier: 5,
       sound: "point",
-      soundDelayMs: 480, // 8 ticks * 60ms
+      sounddelayms: 480, // 8 ticks * 60ms
     });
     expect(emotes[0]?.preanim).toBeNull();
   });
@@ -525,9 +546,9 @@ describe("parseCharIni: example fixtures", () => {
       preanim: "point.vmd",
       postanim: "lower_arm.vmd",
       modifier: 5,
-      deskMod: 1,
+      deskmod: 1,
       sound: "objection.opus",
-      soundDelayMs: 480,
+      sounddelayms: 480,
     });
   });
 });
