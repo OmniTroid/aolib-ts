@@ -14,10 +14,11 @@
  * Two emote encodings are normalized to one `CharEmote[]` (per the spec
  * in aolib-meta `schemas/assets`):
  *
- *   - `[emote <name>]` blocks (preferred): `[emotions]` lists the button
- *     order as `N = <blockname>`, and each `[emote <blockname>]` section
- *     carries `anim` / `preanim` / `sound` / `modifier` / `desk` fields.
- *     `modifier` takes a number or an EmoteModifier name (e.g. `zoom`).
+ *   - `[emote <name>]` blocks (preferred): each `[emote <blockname>]`
+ *     section carries `anim` / `preanim` / `sound` / `modifier` / `desk`
+ *     fields. `[emotions]` optionally lists the button order as
+ *     `N = <blockname>`; when it lists none, every block is used in file
+ *     order. `modifier` takes a number or an EmoteModifier name (e.g. `zoom`).
  *   - Legacy banks (fallback, used when no `[emote ...]` block exists):
  *     `[emotions] N = desc#preanim#anim#modifier#deskMod`, zipped with
  *     `[soundn]` and `[soundt]` by id.
@@ -163,6 +164,7 @@ export function parseCharIni(data: string): CharIni {
   // autoTyping off char.ini yields only scalars, so keep those and drop
   // anything structural.
   const sections: Record<string, Record<string, string>> = {};
+  const blockOrder: string[] = [];
   for (const [section, body] of Object.entries(raw)) {
     if (typeof body !== "object" || Array.isArray(body)) continue;
     const lower: Record<string, string> = {};
@@ -170,7 +172,11 @@ export function parseCharIni(data: string): CharIni {
       if (typeof value === "object") continue;
       lower[key.toLowerCase()] = String(value);
     }
-    sections[section.toLowerCase()] = lower;
+    const name = section.toLowerCase();
+    sections[name] = lower;
+    // Record `[emote <name>]` block names in file order, for the case where
+    // `[emotions]` does not enumerate them (see readBlockEmotes).
+    if (name.startsWith("emote ")) blockOrder.push(section.slice(6));
   }
 
   const opt = sections.options ?? {};
@@ -191,26 +197,37 @@ export function parseCharIni(data: string): CharIni {
 
   // Prefer `[emote <name>]` blocks; fall back to the legacy banks only
   // when the file carries no such block.
-  const useBlocks = Object.keys(sections).some((s) => s.startsWith("emote "));
-
-  const emotes = useBlocks
-    ? readBlockEmotes(emotionSection, sections, count)
-    : readLegacyEmotes(emotionSection, sections, count);
+  const emotes =
+    blockOrder.length > 0
+      ? readBlockEmotes(emotionSection, sections, count, blockOrder)
+      : readLegacyEmotes(emotionSection, sections, count);
 
   return { options, emotes, sections };
 }
 
-/** `[emote <name>]` encoding: `[emotions] N = <blockname>` + block sections. */
+/**
+ * `[emote <name>]` encoding: `[emote <blockname>]` sections carrying the emote
+ * fields. `[emotions]` optionally lists the block names in button order as
+ * `N = <blockname>`; when it enumerates none, every block is used in file order
+ * (`blockOrder`). Listed blocks keep their `[emotions]` id (gaps preserved);
+ * the file-order fallback numbers them 1..N.
+ */
 function readBlockEmotes(
   emotionSection: Record<string, string>,
   sections: Record<string, Record<string, string>>,
   count: number,
+  blockOrder: string[],
 ): CharEmote[] {
-  const emotes: CharEmote[] = [];
+  const listed: { id: number; key: string }[] = [];
   for (let id = 1; id <= count; id++) {
     const key = emotionSection[String(id)];
-    if (key === undefined) continue;
+    if (key !== undefined) listed.push({ id, key });
+  }
+  const entries =
+    listed.length > 0 ? listed : blockOrder.map((key, i) => ({ id: i + 1, key }));
 
+  const emotes: CharEmote[] = [];
+  for (const { id, key } of entries) {
     const block = sections[`emote ${key.toLowerCase()}`] ?? {};
 
     // The block format requires real filenames — reject bare stems.

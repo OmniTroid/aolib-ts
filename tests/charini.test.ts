@@ -427,6 +427,35 @@ anim = think_loop.vmd
     );
     expect(emotes[0]).toMatchObject({ preanim: null, sound: null });
   });
+
+  it("uses every block in file order when `[emotions]` is absent", () => {
+    const { emotes } = parseCharIni(
+      "[options]\nmodel = model.pmx\n" +
+        "[emote jog]\nanim = run16.vmd\n" +
+        "[emote wave]\nanim = wave.vmd\n",
+    );
+    expect(emotes.map((e) => ({ id: e.id, key: e.key, anim: e.anim }))).toEqual([
+      { id: 1, key: "jog", anim: "run16.vmd" },
+      { id: 2, key: "wave", anim: "wave.vmd" },
+    ]);
+  });
+
+  it("falls back to file order when `[emotions]` lists no blocks", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 0\n[emote jog]\nanim = run16.vmd\n",
+    );
+    expect(emotes.map((e) => e.key)).toEqual(["jog"]);
+  });
+
+  it("still honors `[emotions]` order and selection when present", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = wave\n" +
+        "[emote jog]\nanim = run16.vmd\n" +
+        "[emote wave]\nanim = wave.vmd\n",
+    );
+    // Only the listed block is an emote, despite `jog` appearing first.
+    expect(emotes.map((e) => e.key)).toEqual(["wave"]);
+  });
 });
 
 // ---------------------------------------------------------------------
