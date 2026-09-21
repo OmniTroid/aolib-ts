@@ -85,14 +85,18 @@ export interface CharEmote {
 export interface CharIniOptions {
   name: string;
   showname: string;
+  /** Court position; defaults to `wit` (witness) when absent. */
   side: string;
-  gender: string;
+  /** Blip (typing sound) set; defaults to `male` when absent. Falls back
+   * to the obsolete `gender` key when the file has no `blips`. */
   blips: string;
-  chat: string;
-  category: string;
+  /** Chat/blip category; null when the file has no `chat` key. */
+  chat: string | null;
+  /** Emote/preanim category; null when the file has no `category` key. */
+  category: string | null;
   /** PMX model file for a 3D character; empty for 2D. */
   model: string;
-  [key: string]: string;
+  [key: string]: string | null;
 }
 
 export interface CharIni {
@@ -190,13 +194,15 @@ export function parseCharIni(data: string): CharIni {
   const options: CharIniOptions = {
     name: "",
     showname: "",
-    side: "",
-    gender: "",
-    blips: "",
-    chat: "",
-    category: "",
+    side: "wit",
     model: "",
     ...opt,
+    // `blips` falls back to the obsolete `gender` key, then to `male`.
+    blips: opt.blips ?? opt.gender ?? "male",
+    // Absent `chat`/`category` are "unset" (null), distinct from an
+    // explicit empty `chat =` / `category =`.
+    chat: opt.chat ?? null,
+    category: opt.category ?? null,
   };
 
   const emotionSection = sections.emotions ?? {};

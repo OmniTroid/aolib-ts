@@ -97,13 +97,24 @@ side = WIT
     expect(options.side).toBe("WIT");
   });
 
-  it("fills missing options with empty-string defaults", () => {
+  it("applies option defaults when keys are absent", () => {
     const { options } = parseCharIni(`
 [options]
 name = Bare
 `);
     expect(options.showname).toBe("");
-    expect(options.category).toBe("");
+    expect(options.side).toBe("wit");
+    expect(options.blips).toBe("male");
+    expect(options.chat).toBeNull();
+    expect(options.category).toBeNull();
+  });
+
+  it("defaults chat to null when absent, but keeps an explicit empty chat", () => {
+    expect(parseCharIni("[options]\nname = A\n").options.chat).toBeNull();
+    expect(parseCharIni("[options]\nname = A\nchat =\n").options.chat).toBe("");
+    expect(parseCharIni("[options]\nname = A\nchat = aa\n").options.chat).toBe(
+      "aa",
+    );
   });
 
   it("ignores `;` comments but never `#`", () => {
@@ -169,13 +180,24 @@ describe("parseCharIni: real-world edge cases", () => {
     const { options } = parseCharIni(
       "[options]\nname = Aether\n// chat = genshin\n",
     );
-    expect(options.chat).toBe("");
+    expect(options.chat).toBeNull();
     expect(Object.keys(options)).not.toContain("// chat");
   });
 
   it("parses tab-separated `key<tab>= value`", () => {
-    const { options } = parseCharIni("[options]\ngender\t = male\n");
-    expect(options.gender).toBe("male");
+    const { options } = parseCharIni("[options]\nshowname\t = Matt\n");
+    expect(options.showname).toBe("Matt");
+  });
+
+  it("falls back to the obsolete `gender` key for blips", () => {
+    // No blips: gender supplies it.
+    expect(parseCharIni("[options]\ngender = female\n").options.blips).toBe(
+      "female",
+    );
+    // blips wins when both are present.
+    expect(
+      parseCharIni("[options]\nblips = male\ngender = female\n").options.blips,
+    ).toBe("male");
   });
 
   it("parses `key=value` with no surrounding spaces", () => {
