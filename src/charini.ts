@@ -18,7 +18,8 @@
  *     section carries `anim` / `preanim` / `postanim` / `camera` / `sound` /
  *     `modifier` / `deskmod` fields. `[emotions]` optionally lists the button order as
  *     `N = <blockname>`; when it lists none, every block is used in file
- *     order. `modifier` takes a number or an EmoteModifier name (e.g. `zoom`).
+ *     order. In blocks `modifier`/`deskmod` must be a named enum
+ *     identifier (e.g. `zoom`), never a bare number.
  *   - Legacy banks (fallback, used when no `[emote ...]` block exists):
  *     `[emotions] N = desc#preanim#anim#modifier#deskmod`, zipped with
  *     `[soundn]` and `[soundt]` by id.
@@ -118,13 +119,34 @@ function normPreanim(value: string | undefined): string | null {
   return value === undefined || value === "" || value === "-" ? null : value;
 }
 
-/** A numeric value or a named enum identifier (case-insensitive). */
+/** Legacy positional enum field: a bare number or a named identifier. */
 function parseEnum(
   value: string | undefined,
   names: Record<string, number>,
 ): number {
   if (value === undefined || value === "") return 0;
   return names[value.toLowerCase()] ?? toInt(value, 0);
+}
+
+/**
+ * Block enum field: require the named identifier — no bare magic numbers.
+ * Absent/empty returns undefined (caller applies the default); a present
+ * value must be a known enum name, else it throws.
+ */
+function requireEnumName(
+  value: string | undefined,
+  names: Record<string, number>,
+  field: string,
+  key: string,
+): number | undefined {
+  if (value === undefined || value === "") return undefined;
+  const named = names[value.toLowerCase()];
+  if (named === undefined) {
+    throw new Error(
+      `char.ini emote "${key}": ${field} "${value}" must be one of: ${Object.keys(names).join(", ")}`,
+    );
+  }
+  return named;
 }
 
 /** Empty or absent sound means "no sound"; `0` is kept verbatim. */
@@ -260,9 +282,9 @@ function readBlockEmotes(
       preanim,
       postanim,
       camera,
-      modifier: parseEnum(block.modifier, MODIFIER_NAMES),
-      deskmod:
-        block.deskmod !== undefined ? parseEnum(block.deskmod, DESKMOD_NAMES) : 1,
+      // Blocks require named enum identifiers — no bare magic numbers.
+      modifier: requireEnumName(block.modifier, MODIFIER_NAMES, "modifier", key) ?? 0,
+      deskmod: requireEnumName(block.deskmod, DESKMOD_NAMES, "deskmod", key) ?? 1,
       sound,
       sounddelayms:
         block.sounddelayms !== undefined ? toInt(block.sounddelayms, 0) : 0,

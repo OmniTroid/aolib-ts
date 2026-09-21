@@ -340,8 +340,8 @@ postanim = bow.vmd
 camera  = objection_cam.vmd
 sound   = objection.opus
 sounddelayms = 480
-modifier = 5
-deskmod = 1
+modifier = zoom
+deskmod = shown
 
 [emote think]
 anim = think_loop.vmd
@@ -409,11 +409,23 @@ anim = think_loop.vmd
       "[emotions]\nnumber = 3\n1 = a\n2 = b\n3 = c\n" +
         "[emote a]\nanim = a.gif\nmodifier = zoom\n" +
         "[emote b]\nanim = b.gif\nmodifier = OBJECTION_ZOOM\n" +
-        "[emote c]\nanim = c.gif\nmodifier = 1\n",
+        "[emote c]\nanim = c.gif\nmodifier = preanim\n",
     );
     expect(emotes[0]?.modifier).toBe(5);
     expect(emotes[1]?.modifier).toBe(6);
     expect(emotes[2]?.modifier).toBe(1);
+  });
+
+  it("rejects a bare number for a block `modifier`", () => {
+    expect(() =>
+      parseCharIni("[emotions]\nnumber = 1\n1 = a\n[emote a]\nanim = a.gif\nmodifier = 5\n"),
+    ).toThrow(/modifier "5" must be one of/);
+  });
+
+  it("rejects a bare number for a block `deskmod`", () => {
+    expect(() =>
+      parseCharIni("[emotions]\nnumber = 1\n1 = a\n[emote a]\nanim = a.gif\ndeskmod = 0\n"),
+    ).toThrow(/deskmod "0" must be one of/);
   });
 
   it("accepts a named DeskModifier in the block `deskmod` field", () => {
