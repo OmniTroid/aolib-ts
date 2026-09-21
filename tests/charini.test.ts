@@ -38,6 +38,7 @@ number = 2
       key: "1",
       name: "normal",
       preanim: null,
+      postanim: null,
       anim: "idle",
       modifier: 1,
       deskMod: null,
@@ -313,6 +314,7 @@ number = 2
 [emote objection]
 anim    = objection.vmd
 preanim = point.vmd
+postanim = bow.vmd
 sound   = objection.opus
 sounddelayms = 480
 modifier = 5
@@ -331,6 +333,7 @@ anim = think_loop.vmd
       name: "objection",
       anim: "objection.vmd",
       preanim: "point.vmd",
+      postanim: "bow.vmd",
       modifier: 5,
       deskMod: 1,
       sound: "objection.opus",
@@ -346,6 +349,7 @@ anim = think_loop.vmd
       name: "think",
       anim: "think_loop.vmd",
       preanim: null,
+      postanim: null,
       modifier: 0,
       deskMod: null,
       sound: null,
@@ -421,11 +425,35 @@ anim = think_loop.vmd
     ).toThrow(/sound .* must include a file extension/);
   });
 
-  it("still allows an absent preanim/sound in a block", () => {
+  it("still allows an absent preanim/postanim/sound in a block", () => {
     const { emotes } = parseCharIni(
       "[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj.gif\n",
     );
-    expect(emotes[0]).toMatchObject({ preanim: null, sound: null });
+    expect(emotes[0]).toMatchObject({
+      preanim: null,
+      postanim: null,
+      sound: null,
+    });
+  });
+
+  it("reads a block `postanim` (exit animation)", () => {
+    const { emotes } = parseCharIni(
+      "[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj.gif\npostanim = bow.gif\n",
+    );
+    expect(emotes[0]?.postanim).toBe("bow.gif");
+  });
+
+  it("rejects a block `postanim` without a file extension", () => {
+    expect(() =>
+      parseCharIni(
+        "[emotions]\nnumber = 1\n1 = obj\n[emote obj]\nanim = obj.gif\npostanim = bow\n",
+      ),
+    ).toThrow(/postanim .* must include a file extension/);
+  });
+
+  it("leaves postanim null for legacy emotes", () => {
+    const { emotes } = parseCharIni("[emotions]\nnumber = 1\n1 = a#-#a#0\n");
+    expect(emotes[0]?.postanim).toBeNull();
   });
 
   it("uses every block in file order when `[emotions]` is absent", () => {
@@ -495,6 +523,7 @@ describe("parseCharIni: example fixtures", () => {
       name: "objection",
       anim: "objection.vmd",
       preanim: "point.vmd",
+      postanim: "lower_arm.vmd",
       modifier: 5,
       deskMod: 1,
       sound: "objection.opus",

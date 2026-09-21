@@ -15,8 +15,8 @@
  * in aolib-meta `schemas/assets`):
  *
  *   - `[emote <name>]` blocks (preferred): each `[emote <blockname>]`
- *     section carries `anim` / `preanim` / `sound` / `modifier` / `desk`
- *     fields. `[emotions]` optionally lists the button order as
+ *     section carries `anim` / `preanim` / `postanim` / `sound` /
+ *     `modifier` / `deskmod` fields. `[emotions]` optionally lists the button order as
  *     `N = <blockname>`; when it lists none, every block is used in file
  *     order. `modifier` takes a number or an EmoteModifier name (e.g. `zoom`).
  *   - Legacy banks (fallback, used when no `[emote ...]` block exists):
@@ -63,6 +63,9 @@ export interface CharEmote {
   anim: string;
   /** Pre-animation (same form as `anim`), or null when none (`-`). */
   preanim: string | null;
+  /** Exit animation played when leaving this emote, before the next
+   * emote's preanim (block format only; null otherwise). */
+  postanim: string | null;
   /** AO emote modifier (0 = none, 1 = play preanim, 5/6 = zoom). */
   modifier: number;
   /** Desk modifier when specified, else null. */
@@ -235,6 +238,8 @@ function readBlockEmotes(
     requireExtension(anim, "anim", key);
     const preanim = normPreanim(block.preanim);
     if (preanim !== null) requireExtension(preanim, "preanim", key);
+    const postanim = normPreanim(block.postanim);
+    if (postanim !== null) requireExtension(postanim, "postanim", key);
     const sound = normSound(block.sound);
     if (sound !== null) requireExtension(sound, "sound", key);
 
@@ -244,6 +249,7 @@ function readBlockEmotes(
       name: block.name ?? key,
       anim,
       preanim,
+      postanim,
       modifier: parseEnum(block.modifier, MODIFIER_NAMES),
       deskMod:
         block.deskmod !== undefined
@@ -279,6 +285,7 @@ function readLegacyEmotes(
       name: parts[0] ?? "",
       anim: parts[2] ?? "",
       preanim: normPreanim(parts[1]),
+      postanim: null,
       modifier: parseEnum(parts[3], MODIFIER_NAMES),
       deskMod: parts.length > 4 ? parseEnum(parts[4], DESKMOD_NAMES) : null,
       sound: normSound(soundN[String(id)]),
